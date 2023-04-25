@@ -52,7 +52,7 @@ export default function Player() {
   const MIN = 0;
 
   return (
-    <div className="flex px-4 justify-between items-center h-full">
+    <div className="flex px-4 justify-between items-center h-full z-50">
       {/* LEFT */}
       <div className="min-w-[11.25rem] w-[30%]">
         {current && (

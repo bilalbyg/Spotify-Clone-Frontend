@@ -3,6 +3,7 @@ import { Menu } from "@headlessui/react";
 import { Icon } from "../../Icons";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
+import { NavLink } from "react-router-dom";
 
 export default function Auth() {
   const user = {
@@ -45,14 +46,14 @@ export default function Auth() {
           >
             <Menu.Item>
               {({ active }) => (
-                <a
+                <NavLink
                   className={`h-10 flex items-center px-2 text-sm rounded ${
                     active && "bg-white bg-opacity-20"
                   }`}
-                  href="#"
+                  to="/account"
                 >
                   Account settings
-                </a>
+                </NavLink>
               )}
             </Menu.Item>{" "}
             <Menu.Item>

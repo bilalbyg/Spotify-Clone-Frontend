@@ -9,19 +9,19 @@ export default class EpisodeService {
     });
   }
 
-//   getSongById(songId) {
-//     return axios.get("http://localhost:8080/api/songs/getById?id=" + songId, {
-//       headers: {
-//         Authorization: localStorage.getItem("tokenKey"),
-//       },
-//     });
-//   }
+  getEpisodeById(episodeId) {
+    return axios.get("http://localhost:8080/api/episodes/getById?id=" + episodeId, {
+      headers: {
+        Authorization: localStorage.getItem("tokenKey"),
+      },
+    });
+  }
 
-//   getSongsById(songIds) {
-//     return axios.get("http://localhost:8080/api/songs/getSongsById?ids=" + songIds, {
-//       headers: {
-//         Authorization: localStorage.getItem("tokenKey"),
-//       },
-//     });
-//   }
+  getEpisodesById(episodeIds) {
+    return axios.get("http://localhost:8080/api/episodes/getEpisodesById?ids=" + episodeIds, {
+      headers: {
+        Authorization: localStorage.getItem("tokenKey"),
+      },
+    });
+  }
 }

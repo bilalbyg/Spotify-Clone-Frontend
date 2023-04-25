@@ -9,12 +9,23 @@ export default function Playlists() {
 
   const dispatch = useDispatch();
 
+  let userId = parseInt(localStorage.getItem("currentUser"));
+
   useEffect(() => {
     let playlistService = new PlaylistService();
     playlistService
       .getPlaylists()
-      .then((result) => setPlaylists(result.data.data));
-  }, []);
+      .then((result) => {
+        //console.log(typeof(userId));
+        //console.log(result.data.data.filter((playlist) => playlist.playlistUserId === userId));
+        setPlaylists(result.data.data.filter((playlist) => playlist.playlistUserId === userId))
+      });
+  }, [userId]);
+
+  useEffect(() => {
+    let duration = 45.25;
+    console.log(duration.toString().split(".")); 
+  })
 
   // const getSongsFromPlaylistAndDispatch = (playlist) => {
 
@@ -47,7 +58,7 @@ export default function Playlists() {
                 playlistService
                   .getPlaylistById(playlist.playlistId)
                   .then((result) => {
-                    dispatch(setPlaylist(playlist));                    
+                    dispatch(setPlaylist(playlist));
                   });
               }}
               to="/playlist"

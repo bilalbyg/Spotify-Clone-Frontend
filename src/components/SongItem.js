@@ -36,14 +36,14 @@ export default function SongItem({ item }) {
         />
         <button
           onClick={updateCurrent}
-          className={`w-10 h-10 rounded-full bg-primary absolute bottom-2 right-2 items-center justify-center ${
+          className={`text-white w-10 h-10 rounded-full bg-primary absolute bottom-2 right-2 items-center justify-center ${
             !isCurrentItem ? "hidden" : "flex"
           } group-hover:flex group-focus:flex`}
         >
           <Icon name={isCurrentItem ? "pause" : "play"} size={22} />
         </button>
       </div>
-      <h6 className="overflow-hidden overflow-ellipsis whitespace-nowrap font-semibold">
+      <h6 className="text-white overflow-hidden overflow-ellipsis whitespace-nowrap font-semibold">
         {item.name}
       </h6>
       <p className="line-clamp-2 text-[rgb(167,167,167)] text-sm mt-1 font-semibold">

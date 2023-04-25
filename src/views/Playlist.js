@@ -3,41 +3,54 @@ import { Icon } from "../Icons";
 import { Table } from "semantic-ui-react";
 import { useSelector } from "react-redux";
 import SongService from "../services/songService";
+import UserLikedSongService from "../services/userLikedSongService";
+import playingGif from "../img/playing.gif";
 
 export default function Playlist() {
+  const playlist = useSelector((state) => state.playlist);
 
-  const playlist = useSelector(state => state.playlist)
+  const [songs, setSongs] = useState([]);
+  const [isPlaying, setIsPlaying] = useState(true);
 
-  const [songs, setSongs] = useState([])
-  
   let index = 1;
 
   useEffect(() => {
     let songService = new SongService();
-    console.log("asdas");
-    let queryString = JSON.stringify(playlist?.playlist?.playlistSongs)
-    let toSendQueryString = queryString?.substring(1, queryString.length - 1)
+    let queryString = JSON.stringify(playlist?.playlist?.playlistSongs);
+    let toSendQueryString = queryString?.substring(1, queryString.length - 1);
     songService.getSongsById(toSendQueryString).then((result) => {
       console.log(result.data.data);
-      setSongs(result.data.data)
-    })
-  }, [])
+      setSongs(result.data.data);
+    });
+  }, []);
 
   useEffect(() => {
     let songService = new SongService();
-    let queryString = JSON.stringify(playlist?.playlist?.playlistSongs)
-    let toSendQueryString = queryString?.substring(1, queryString.length - 1)
+    let queryString = JSON.stringify(playlist?.playlist?.playlistSongs);
+    let toSendQueryString = queryString?.substring(1, queryString.length - 1);
     songService.getSongsById(toSendQueryString).then((result) => {
-      setSongs(result.data.data)
-    })
-  }, [playlist])
+      setSongs(result.data.data);
+    });
+  }, [playlist]);
+
+  const likeSong = (songId) => {
+    let userId = parseInt(localStorage.getItem("currentUser"));
+    var request = {
+      songId: songId, 
+      userId: userId 
+    }
+    let userLikedSongService = new UserLikedSongService();
+    userLikedSongService
+      .addUserLikedSong(request)
+      .then((res) => console.log(res))
+      .catch((err) => console.log(err));
+  };
 
   return (
-
     // remove fragment, add "?" to after playlists
 
     <>
-      { (
+      {
         <div>
           {playlist?.playlist?.playlistId}
           {/* TOP */}
@@ -57,12 +70,16 @@ export default function Playlist() {
                   <div className="h-6 w-6 rounded-full">
                     <img src="https://cdn-icons-png.flaticon.com/512/847/847969.png" />
                   </div>
-                  <span className="tracking-tight font-semibold">{localStorage.getItem("userMail")}</span>
+                  <span className="tracking-tight font-semibold">
+                    {localStorage.getItem("userMail")}
+                  </span>
                 </div>
                 <span className="h-1 w-1 bg-white rounded-full inline-block" />
                 <span className="text-sm font-semibold">1 beğenme</span>
                 <span className="h-1 w-1 bg-white rounded-full inline-block" />
-                <span className="text-sm font-semibold">{playlist?.playlist?.playlistSongs?.length} şarkı, </span>
+                <span className="text-sm font-semibold">
+                  {playlist?.playlist?.playlistSongs?.length} şarkı,{" "}
+                </span>
                 <span className="text-white opacity-70">
                   yaklaşık 3sa. 15dk.
                 </span>
@@ -120,11 +137,22 @@ export default function Playlist() {
               </Table.Header>
               <Table.Body>
                 {songs.map((song) => (
-                  
                   <Table.Row className="h-14 group hover:bg-[#2d2d2d]">
                     <Table.Cell className="w-40">
                       <div className="text-[#a7a7a7] font-semibold text-sm flex items-center justify-center">
-                        <span>{index++}</span>
+                        {isPlaying ? (
+                          <img
+                            src={playingGif}
+                            className="w-6 h-6 group-hover:hidden"
+                          />
+                        ) : (
+                          <span className="group-hover:hidden">{index++}</span>
+                        )}
+                      </div>
+                      <div className="hidden items-center justify-center group-hover:flex">
+                        <button>
+                          <Icon name="play" size={20} />
+                        </button>
                       </div>
                     </Table.Cell>
                     <Table.Cell className="w-[200px]">
@@ -151,7 +179,10 @@ export default function Playlist() {
                     </Table.Cell>
                     <Table.Cell className="w-40 pr-4">
                       <div className="flex flex-row items-center justify-between">
-                        <button className="invisible group-hover:visible">
+                        <button
+                          onClick={() => likeSong(song.songId)}
+                          className="invisible group-hover:visible"
+                        >
                           <Icon name="like" size={16} />
                         </button>
                         <span className="text-[#a7a7a7] font-semibold text-sm flex items-center justify-center">
@@ -164,14 +195,12 @@ export default function Playlist() {
                     </Table.Cell>
                   </Table.Row>
                 ))}
-
-              
               </Table.Body>
             </Table>
           </div>
           <hr className="h-px my-8 bg-[#2a2a2a] border-0" />
         </div>
-      )}
+      }
     </>
   );
 }

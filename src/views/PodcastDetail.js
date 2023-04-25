@@ -144,7 +144,7 @@ export default function PodcastDetail() {
                               <div className="flex flex-row gap-x-1 items-center justify-center text-sm text-[#b3b3b3] font-semibold tracking-tight">
                                 <span>{moment(episode.episodeReleaseDate).locale('tr').format('DD MMM')}</span>
                                 <span className="h-1 w-1 bg-white rounded-full inline-block" />
-                                <span>{episode.episodeDuration}</span>
+                                <span>{episode.episodeDuration.toString().split(".")[0]} dk. {episode.episodeDuration.toString().split(".")[1]} sn</span>
                               </div>
                             </div>
                             <div className="flex flex-row gap-x-4">

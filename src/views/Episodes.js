@@ -1,9 +1,41 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Icon } from "../Icons";
 import { NavLink } from "react-router-dom";
-
+import UserEpisodeService from "../services/userEpisodeService";
+import EpisodeService from "../services/episodeService";
+import moment from "moment";
+import "moment/locale/tr";
+import { Popup } from "semantic-ui-react";
 
 export default function Episodes() {
+  const userId = parseInt(localStorage.getItem("currentUser"));
+
+  const [userEpisodes, setUserEpisodes] = useState([]);
+  const [episodes, setEpisodes] = useState([]);
+
+  useEffect(() => {
+    let userEpisodeService = new UserEpisodeService();
+    userEpisodeService.getUserEpisodes().then((result) => {
+      setUserEpisodes(
+        result.data.data.filter((userEpisode) => userEpisode.userId === userId)
+      );
+    });
+
+    let episodeIds = [];
+
+    userEpisodes.map((userEpisode) => {
+      episodeIds.push(userEpisode.episodeId);
+    });
+
+    let queryString = JSON.stringify(episodeIds);
+    let toSendQueryString = queryString.substring(1, queryString.length - 1);
+
+    let episodeService = new EpisodeService();
+    episodeService
+      .getEpisodesById(toSendQueryString)
+      .then((result) => setEpisodes(result.data.data));
+  }, [episodes]);
+
   return (
     <main>
       {/* TOP */}
@@ -15,8 +47,8 @@ export default function Episodes() {
           <span className="font-semibold text-sm tracking-wide z-50 pl-1">
             Çalma Listesi
           </span>
-          <span className="text-8xl font-bold tracking-tighter">
-            <h1>Bölümlerin</h1>
+          <span className="font-bold">
+            <h1 className="text-8xl font-bold tracking-tight">Bölümlerin</h1>
           </span>
           <div className="flex flex-row items-center gap-x-2 pt-4">
             <div className="flex flex-row gap-x-2 items-center">
@@ -28,7 +60,9 @@ export default function Episodes() {
               </span>
             </div>
             <span className="h-1 w-1 bg-white rounded-full inline-block" />
-            <span className="text-sm font-semibold">2 bölüm </span>
+            <span className="text-sm font-semibold">
+              {episodes.length} bölüm
+            </span>
           </div>
         </div>
       </div>
@@ -45,54 +79,65 @@ export default function Episodes() {
       {/* BOTTOM */}
       <div className="bg-[#272727]">
         <div className="px-8 py-2 w-[56.25rem] h-auto">
-          <div>
-            <hr className="h-px bg-podcastHover border-0" />
-            <div className="flex flex-row gap-x-4 bg-transparent hover:bg-podcastHover w-auto h-52 p-5 rounded-md group">
-              <div className="w-28 h-28 min-w-[7rem]">
-                <img src="https://freight.cargo.site/t/original/i/a7e95331ab34c475b9aa4322a2846a59f8976db2f5d25b51cc06f47ff305574e/Podcast_S4_LOUD_3000x3000-copy.jpg"></img>
-              </div>
-              <div>
-                <div className="text-white font-semibold hover:underline hover:cursor-pointer">
-                  <NavLink to="/episode-detail">Yol açık, yola çık</NavLink> 
+          {episodes.map((episode) => (
+            <div>
+              <hr className="h-px bg-podcastHover border-0" />
+              <div className="flex flex-row gap-x-4 bg-transparent hover:bg-podcastHover w-auto h-52 p-5 rounded-md group">
+                <div className="w-28 h-28 min-w-[7rem]">
+                  <img src={episode.podcast.podcastCoverImageUrl} />
                 </div>
-                <div className="text-sm text-white font-semibold hover:underline hover:cursor-pointer">
-                 <NavLink to="/podcast-detail">Kafa Radyo</NavLink> 
-                </div>
-                <div className="py-3 text-sm text-[#b3b3b3] font-semibold tracking-tight">
-                  <p className="line-clamp-2">
-                    Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-                    Mauris consequat sapien vitae enim dapibus, vitae porttitor
-                    mi molestie. Quisque feugiat aliquam sapien. Proin felis
-                    elit, vehicula quis nisl nec, posuere ornare dui. Morbi
-                    mattis ligula in consequat sodales. Sed tristique mattis
-                    tortor, dictum rutrum lorem vehicula vitae. Nulla commodo
-                    rutrum metus, a mattis odio. Sed est massa, facilisis eu
-                    blandit nec, ullamcorper vitae urna.
-                  </p>
-                </div>
-                <div className="flex flex-row items-center justify-between py-4">
-                  <div className="flex flex-row items-center gap-x-4">
-                    <button className="rounded-full w-8 h-8 bg-primary flex items-center justify-center">
-                      <Icon name="play" />
-                    </button>
-                    <div className="flex flex-row gap-x-1 items-center justify-center text-sm text-[#b3b3b3] font-semibold tracking-tight">
-                      <span>5 Nis</span>
-                      <span className="h-1 w-1 bg-white rounded-full inline-block" />
-                      <span>19 dk. 57sn</span>
-                    </div>
+                <div>
+                  <div className="text-white font-semibold hover:underline hover:cursor-pointer">
+                    <NavLink to="/episode-detail">
+                      {episode.episodeName}
+                    </NavLink>
                   </div>
-                  <div className="flex flex-row gap-x-4">
-                    <span className="text-primary">
-                      <Icon name="tick" />
-                    </span>
-                    <span className="invisible group-hover:visible">
-                      <Icon name="dots" />
-                    </span>
+                  <div className="text-sm text-white font-semibold hover:underline hover:cursor-pointer">
+                    <NavLink to="/podcast-detail">
+                      {episode.podcast.podcastName}
+                    </NavLink>
+                  </div>
+                  <div className="py-3 text-sm text-[#b3b3b3] font-semibold tracking-tight">
+                    <p className="line-clamp-2">{episode.episodeDescription}</p>
+                  </div>
+                  <div className="flex flex-row items-center justify-between py-4">
+                    <div className="flex flex-row items-center gap-x-4">
+                      <button className="rounded-full w-8 h-8 bg-primary flex items-center justify-center">
+                        <Icon name="play" />
+                      </button>
+                      <div className="flex flex-row gap-x-1 items-center justify-center text-sm text-[#b3b3b3] font-semibold tracking-tight">
+                        <span>
+                          {moment(episode.episodeReleaseDate)
+                            .locale("tr")
+                            .format("DD MMM")}
+                        </span>
+                        <span className="h-1 w-1 bg-link rounded-full inline-block" />
+                        <span>
+                          {episode.episodeDuration.toString().split(".")[0]} dk.{" "}
+                          {episode.episodeDuration.toString().split(".")[1]} sn
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex flex-row gap-x-4">
+                      <span className="text-primary">
+                        <Icon name="tick" />
+                      </span>
+                      <Popup
+                        className="text-sm bg-black px-2 py-1 font-semibold "                        
+                        trigger={
+                          <span className="invisible group-hover:visible">
+                            <Icon name="dots" />
+                          </span>
+                        }
+                        content="Diğer seçenekler"
+                        basic
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
+          ))}
         </div>
       </div>
     </main>

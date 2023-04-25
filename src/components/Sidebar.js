@@ -17,20 +17,20 @@ function Sidebar() {
       <nav className="mt-6">
         <ul>
           <li>
-            <a href="#" className="py-2 px-6 flex items-center group text-sm text-link font-semibold hover:text-white">
+            <NavLink to="/create-playlist" className="py-2 px-6 flex items-center group text-sm text-link font-semibold hover:text-white">
               <span className="w-6 h-6 flex items-center justify-center group-hover:bg-opacity-100 mr-4 bg-white rounded-sm text-black bg-opacity-80">
                 <Icon name="plus" size={12} />
               </span>
-              Çalma Listelerim
-            </a>
+              Çalma Listesi Oluştur
+            </NavLink>
           </li>
           <li>
-            <a href="#" className="py-2 px-6 flex items-center group text-sm text-link font-semibold hover:text-white">
+            <NavLink to="/liked-songs" className="py-2 px-6 flex items-center group text-sm text-link font-semibold hover:text-white">
               <span className="w-6 h-6 flex items-center justify-center mr-4 bg-gradient-to-br text-white rounded-sm from-purple-800 to-blue-300 opacity-60 group-hover:opacity-100">
                 <Icon name="like" size={12} />
               </span>
               Beğenilen Şarkılar
-            </a>
+            </NavLink>
           </li>
           <li>
             <NavLink to="/episodes" className="py-2 px-6 flex items-center group text-sm text-link font-semibold hover:text-white">
