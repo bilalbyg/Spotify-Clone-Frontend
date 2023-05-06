@@ -633,7 +633,7 @@ const Icon = ({ name, size = 24 }) => {
     edit: EditLogo,
     lock: LockLogo,
     music: MusicLogo,
-    close: CloseLogo
+    close: CloseLogo,
   };
 
   const Component = icons[name];

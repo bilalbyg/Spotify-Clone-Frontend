@@ -59,12 +59,12 @@ export default function Player() {
           <div className="flex items-center">
             <div className="flex items-center mr-3">
               <div className="w-14 h-14 mr-3 flex-shrink-0">
-                <img src={current?.album.coverImageUrl} />
+                <img src={current?.album?.albumCoverImageUrl} />
               </div>
               <div>
-                <h6 className="text-sm line-clamp-1">{current.name}</h6>
+                <h6 className="text-sm line-clamp-1">{current?.songName}</h6>
                 <p className="text-[0.688rem] text-white text-opacity-70">
-                  {current.album.artist.name}
+                  {current?.album?.artist?.artistName}
                 </p>
               </div>
             </div>
@@ -140,8 +140,8 @@ export default function Player() {
             min={0}
             max={1}
             onChange={(value) => {
-              controls.unmute();
-              controls.volume(value);
+              controls?.unmute();
+              controls?.volume(value);
             }}
           />
         </div>

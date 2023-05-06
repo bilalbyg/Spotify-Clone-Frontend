@@ -1,16 +1,46 @@
 import React, { useState, useEffect } from "react";
 import { Icon } from "../Icons";
 import { Table } from "semantic-ui-react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import SongService from "../services/songService";
 import UserLikedSongService from "../services/userLikedSongService";
 import playingGif from "../img/playing.gif";
+import { setCurrent } from "../stores/player";
+import moment from "moment";
+import { secondsToTime } from "../utils";
+import CustomDropzone from "../components/CustomDropzone";
+import PlaylistDropzone from "../components/PlaylistDropzone";
 
 export default function Playlist() {
   const playlist = useSelector((state) => state.playlist);
 
   const [songs, setSongs] = useState([]);
-  const [isPlaying, setIsPlaying] = useState(true);
+
+  const dispatch = useDispatch();
+
+  const { current, playing, controls } = useSelector((state) => state.player);
+
+  let userId = parseInt(localStorage.getItem("currentUser"));
+
+  const updateCurrent = (song) => {
+    if (current.songId === song.songId) {
+      if (playing) {
+        controls.pause();
+      } else {
+        controls.play();
+      }
+    } else {
+      dispatch(setCurrent(song));
+    }
+  };
+
+  useEffect(() => {
+    console.log(playing);
+  }, [playing]);
+
+  const isCurrentItem = (songId) => {
+    return current?.songId === songId && playing;
+  };
 
   let index = 1;
 
@@ -34,11 +64,10 @@ export default function Playlist() {
   }, [playlist]);
 
   const likeSong = (songId) => {
-    let userId = parseInt(localStorage.getItem("currentUser"));
     var request = {
-      songId: songId, 
-      userId: userId 
-    }
+      songId: songId,
+      userId: userId,
+    };
     let userLikedSongService = new UserLikedSongService();
     userLikedSongService
       .addUserLikedSong(request)
@@ -46,18 +75,54 @@ export default function Playlist() {
       .catch((err) => console.log(err));
   };
 
+  const playlistDuration = () => {
+    let minute = 0;
+    let second = 0;
+    songs.map((song) => {
+      console.log(song.songName);
+      let duration = song.duration.toString().split(".");
+      console.log(duration);
+      minute = minute + parseInt(duration[0]);
+      second = second + parseInt(duration[1]);
+    });
+    second = second + minute * 60;
+
+    let duration = secondsToTime(second).split(":");
+    console.log(duration);
+    return duration;
+  };
+
+  useEffect(() => {
+    playlistDuration();
+  }, []);
+
   return (
     // remove fragment, add "?" to after playlists
 
     <>
       {
         <div>
-          {playlist?.playlist?.playlistId}
           {/* TOP */}
           <div className="flex flex-row justify-end relative pb-6 px-8 bg-gradient-to-t from-[#272727] to-[#575757] min-h-[21.25rem] max-h-[31.25rem]">
-            <div className="absolute left-6 bottom-6 w-56 h-56">
-              <img src={playlist?.playlist?.playlistCoverImageUrl} />
+            {/* {playlist.playlist.playlistCoverImageUrl !== "" ? (
+              <div className="absolute left-6 bottom-6 w-56 h-56">
+                <img src={playlist?.playlist?.playlistCoverImageUrl} />
+              </div>
+            ) : (
+              <div className="group absolute left-6 bottom-6 w-56 h-56 bg-active rounded flex items-center justify-center text-[#7f7f7f]">
+                <div className="block group-hover:hidden">
+                  <Icon name="music" size={70} />
+                </div>
+                <div className="hidden group-hover:flex group-hover:cursor-pointer flex-col justify-center items-center text-white gap-y-2">
+                  <Icon name="edit" size={50} />
+                  <span className="font-semibold">Fotoğraf Seç</span>
+                </div>
+              </div>
+            )} */}
+            <div className="absolute left-6 bottom-6 bg-active w-56 h-56">
+              <PlaylistDropzone playlistId={playlist.playlist.playlistId}/>
             </div>
+
             <div className="flex flex-col h-80 w-[60rem] absolute pt-36 pl-7">
               <span className="font-semibold text-sm tracking-wide z-50 pl-1">
                 Çalma Listesi
@@ -75,13 +140,26 @@ export default function Playlist() {
                   </span>
                 </div>
                 <span className="h-1 w-1 bg-white rounded-full inline-block" />
-                <span className="text-sm font-semibold">1 beğenme</span>
-                <span className="h-1 w-1 bg-white rounded-full inline-block" />
                 <span className="text-sm font-semibold">
-                  {playlist?.playlist?.playlistSongs?.length} şarkı,{" "}
+                  {playlist?.playlist?.playlistSongs?.length} şarkı,
                 </span>
                 <span className="text-white opacity-70">
-                  yaklaşık 3sa. 15dk.
+                  yaklaşık
+                  {playlistDuration()[0] > 0 ? (
+                    <span>{playlistDuration()[0]} sa.</span>
+                  ) : (
+                    ""
+                  )}
+                  {playlistDuration()[1] > 0 ? (
+                    <span> {playlistDuration()[1]} dk.</span>
+                  ) : (
+                    ""
+                  )}
+                  {playlistDuration()[2] > 0 ? (
+                    <span> {playlistDuration()[2]} sn.</span>
+                  ) : (
+                    ""
+                  )}
                 </span>
               </div>
             </div>
@@ -96,10 +174,12 @@ export default function Playlist() {
               {/* name={`${state?.playing ? "pause" : "play"}`} */}
               <Icon size={30} name="play" />
             </button>
-            <button className="h-16 w-16 flex items-center justify-center text-primary hover:text-opacity-100">
-              <Icon size={30} name="like" />
-            </button>
-            <button className="text-[#ffffff99]">
+            {playlist.playlistUserId === userId && (
+              <button className="h-16 w-16 flex items-center justify-center text-primary hover:text-opacity-100">
+                <Icon size={30} name="like" />
+              </button>
+            )}
+            <button className="text-link">
               <Icon name="dots" size={34} />
             </button>
           </div>
@@ -140,7 +220,7 @@ export default function Playlist() {
                   <Table.Row className="h-14 group hover:bg-[#2d2d2d]">
                     <Table.Cell className="w-40">
                       <div className="text-[#a7a7a7] font-semibold text-sm flex items-center justify-center">
-                        {isPlaying ? (
+                        {playing && isCurrentItem(song.songId) ? (
                           <img
                             src={playingGif}
                             className="w-6 h-6 group-hover:hidden"
@@ -150,8 +230,11 @@ export default function Playlist() {
                         )}
                       </div>
                       <div className="hidden items-center justify-center group-hover:flex">
-                        <button>
-                          <Icon name="play" size={20} />
+                        <button onClick={() => updateCurrent(song)}>
+                          <Icon
+                            name={isCurrentItem(song.songId) ? "pause" : "play"}
+                            size={22}
+                          />
                         </button>
                       </div>
                     </Table.Cell>
@@ -162,7 +245,13 @@ export default function Playlist() {
                           src={song.album.albumCoverImageUrl}
                         />
                         <div className="flex flex-col justify-start font-semibold">
-                          <span className="text-white tracking-tight hover:underline">
+                          <span
+                            className={`${
+                              playing && isCurrentItem(song.songId)
+                                ? "text-primary"
+                                : "text-white "
+                            } tracking-tight hover:underline`}
+                          >
                             {song.songName}
                           </span>
                           <span className="text-[#a7a7a7] text-sm hover:underline hover:text-white hover:cursor-pointer">

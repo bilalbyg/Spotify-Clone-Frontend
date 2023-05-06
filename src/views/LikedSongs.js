@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Icon } from "../Icons";
 import { Table } from "semantic-ui-react";
 import playingGif from "../img/playing.gif";
-import { Button, Popup } from 'semantic-ui-react'
+import { Popup } from "semantic-ui-react";
 import UserLikedSongService from "../services/userLikedSongService";
 import SongService from "../services/songService";
 
@@ -37,11 +37,21 @@ export default function LikedSongs() {
     songService
       .getSongsById(toSendQueryString)
       .then((result) => setSongs(result.data.data));
-  }, [songs]);
+  }, [userLikedSongs]);
 
   const unlikeSong = (songId) => {
-
-  }
+    var songIdForDelete;
+    let userId = parseInt(localStorage.getItem("currentUser"));
+    let userLikedSongService = new UserLikedSongService();
+    userLikedSongService
+      .getByUserIdAndSongId(userId, songId)
+      .then((res) => {
+        songIdForDelete = res.data.data.userLikedSongId;
+        userLikedSongService
+          .delete(songIdForDelete)
+      })
+      .catch((err) => console.log(err));
+  };
 
   return (
     <main>
@@ -162,7 +172,12 @@ export default function LikedSongs() {
                       position="bottom center"
                       className="bg-active px-2 py-1 text-white text-sm font-semibold rounded shadow-2xl"
                       trigger={
-                        <button onClick={() => {unlikeSong(song.songId)}} className="visible text-primary">
+                        <button
+                          onClick={() => {
+                            unlikeSong(song.songId);
+                          }}
+                          className="visible text-primary"
+                        >
                           <Icon name="like" size={16} />
                         </button>
                       }

@@ -16,7 +16,29 @@ export default class UserLikedSongService {
       {
         headers: {
           Authorization: localStorage.getItem("tokenKey"),
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+        },
+      }
+    );
+  }
+
+  getByUserIdAndSongId(userId, songId) {
+    return axios.get(
+      `http://localhost:8080/api/user-liked-songs/getByUserIdAndSongId?userId=${userId}&songId=${songId}`,
+      {
+        headers: {
+          Authorization: localStorage.getItem("tokenKey"),
+        },
+      }
+    );
+  }
+
+  delete(userLikedSongId) {
+    return axios.delete(
+      "http://localhost:8080/api/user-liked-songs/delete?id=" + userLikedSongId,
+      {
+        headers: {
+          Authorization: localStorage.getItem("tokenKey"),
         },
       }
     );

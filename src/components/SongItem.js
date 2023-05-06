@@ -29,9 +29,9 @@ export default function SongItem({ item }) {
       to="/home"
       className={"bg-footer p-4 rounded hover:bg-active group"}
     >
-      <div className="pt-[100%] relative mb-4">
+      <div className="pt-[100%] relative mb-3">
         <img
-          src={item.album.coverImageUrl}
+          src={item.album.albumCoverImageUrl}
           className="w-full absolute object-cover inset-0 h-full"
         />
         <button
@@ -43,12 +43,12 @@ export default function SongItem({ item }) {
           <Icon name={isCurrentItem ? "pause" : "play"} size={22} />
         </button>
       </div>
-      <h6 className="text-white overflow-hidden overflow-ellipsis whitespace-nowrap font-semibold">
-        {item.name}
-      </h6>
-      <p className="line-clamp-2 text-[rgb(167,167,167)] text-sm mt-1 font-semibold">
-        {item.album.artist.name}
-      </p>
+      <NavLink to="/album-detail" className="text-white overflow-hidden overflow-ellipsis whitespace-nowrap font-semibold hover:underline">
+        {item.songName}
+      </NavLink>
+      <NavLink to="/artist-detail" className="hover:underline line-clamp-2 text-[rgb(167,167,167)] text-sm mt-1 font-semibold">
+        {item.album.artist.artistName}
+      </NavLink>
     </NavLink>
   );
 }

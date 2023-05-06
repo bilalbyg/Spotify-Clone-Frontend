@@ -3,7 +3,6 @@ import SongService from "../services/songService";
 import Section from "../components/Section";
 import { useSelector } from "react-redux";
 
-
 function Home() {
   const items = [
     {
@@ -118,16 +117,11 @@ function Home() {
 
   return (
     <div className="grid gap-y-8">
-      {/* <ul>
-        {songs.map((song) => (
-          <li key={song.songId}>
-            {song.songName}/{song.album.artist.artistName}
-          </li>
-        ))}
-      </ul> */}
-      <Section title="Recently played" more="/nothing" items={items} />
-      <Section title="Recently played" more="/purgatory" items={items} />
-      <Section title="Recently played" more="/tartaros" items={items} />
+      
+
+      <Section title="Recently played" more="/nothing" items={songs} />
+      <Section title="Recently played" more="/purgatory" items={songs} />
+      <Section title="Recently played" more="/tartaros" items={songs} />
     </div>
   );
 }

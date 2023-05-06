@@ -2,8 +2,9 @@ import React from "react";
 import { Menu } from "@headlessui/react";
 import { Icon } from "../../Icons";
 import { useNavigate } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { NavLink } from "react-router-dom";
+import { setCurrent, setPlaying } from "../../stores/player";
 
 export default function Auth() {
   const user = {
@@ -11,15 +12,16 @@ export default function Auth() {
     avatar: "https://cdn-icons-png.flaticon.com/512/847/847969.png",
   };
 
-  const { current } = useSelector((state) => state.player);
 
   const navigate = useNavigate() 
+  const dispatch = useDispatch()
 
   const handleLogout = () => {
     localStorage.removeItem("tokenKey")
     localStorage.removeItem("currentUser")
     localStorage.removeItem("userMail")
     navigate("/login")
+    dispatch(setPlaying(false))
   }
 
   return (

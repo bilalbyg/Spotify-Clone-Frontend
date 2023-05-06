@@ -13,19 +13,29 @@ export default function Playlists() {
 
   useEffect(() => {
     let playlistService = new PlaylistService();
-    playlistService
-      .getPlaylists()
-      .then((result) => {
-        //console.log(typeof(userId));
-        //console.log(result.data.data.filter((playlist) => playlist.playlistUserId === userId));
-        setPlaylists(result.data.data.filter((playlist) => playlist.playlistUserId === userId))
-      });
+    playlistService.getPlaylists().then((result) => {
+      //console.log(typeof(userId));
+      //console.log(result.data.data.filter((playlist) => playlist.playlistUserId === userId));
+      setPlaylists(
+        result.data.data.filter(
+          (playlist) => playlist.playlistUserId === userId
+        )
+      );
+    });
   }, [userId]);
 
   useEffect(() => {
-    let duration = 45.25;
-    console.log(duration.toString().split(".")); 
-  })
+    let playlistService = new PlaylistService();
+    playlistService.getPlaylists().then((result) => {
+      //console.log(typeof(userId));
+      //console.log(result.data.data.filter((playlist) => playlist.playlistUserId === userId));
+      setPlaylists(
+        result.data.data.filter(
+          (playlist) => playlist.playlistUserId === userId
+        )
+      );
+    });
+  }, [playlists]);
 
   // const getSongsFromPlaylistAndDispatch = (playlist) => {
 

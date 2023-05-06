@@ -13,6 +13,7 @@ import PodcastDetail from "./views/PodcastDetail";
 import Account from "./views/Account";
 import LikedSongs from "./views/LikedSongs";
 import CreatePlaylist from "./views/CreatePlaylist";
+import Deneme from "./views/Deneme";
 
 function App() {
   return (
@@ -109,7 +110,18 @@ function App() {
                 <Login />
               )
             }
-          />
+          />          
+          <Route
+          path="/deneme"
+          exact
+          element={
+            localStorage.getItem("currentUser") ? (
+              <Deneme />
+            ) : (
+              <Login />
+            )
+          }
+        />
         </Route>
         <Route path="/login" exact element={<Login />} />
         <Route path="/register" exact element={<Register />} />
