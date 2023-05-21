@@ -5,11 +5,14 @@ import playingGif from "../img/playing.gif";
 import { Popup } from "semantic-ui-react";
 import UserLikedSongService from "../services/userLikedSongService";
 import SongService from "../services/songService";
+import { useDispatch, useSelector } from "react-redux";
+import { setCurrent } from "../stores/player";
 
 export default function LikedSongs() {
   const userId = parseInt(localStorage.getItem("currentUser"));
 
-  const [isPlaying, setIsPlaying] = useState(true);
+  const { current, playing, controls } = useSelector((state) => state.player);
+  const dispatch = useDispatch();
 
   const [userLikedSongs, setUserLikedSongs] = useState([]);
   const [songs, setSongs] = useState([]);
@@ -47,10 +50,26 @@ export default function LikedSongs() {
       .getByUserIdAndSongId(userId, songId)
       .then((res) => {
         songIdForDelete = res.data.data.userLikedSongId;
-        userLikedSongService
-          .delete(songIdForDelete)
+        userLikedSongService.delete(songIdForDelete);
       })
       .catch((err) => console.log(err));
+  };
+
+  const updateCurrent = (song) => {
+    console.log(song);
+    if (current.songId === song.songId) {
+      if (playing) {
+        controls.pause();
+      } else {
+        controls.play();
+      }
+    } else {
+      dispatch(setCurrent(song));
+    }
+  };
+
+  const isCurrentItem = (songId) => {
+    return current?.songId === songId && playing;
   };
 
   return (
@@ -128,18 +147,21 @@ export default function LikedSongs() {
               <Table.Row className="h-14 group hover:bg-[#2d2d2d]">
                 <Table.Cell className="w-40">
                   <div className="text-[#a7a7a7] font-semibold text-sm flex items-center justify-center">
-                    {isPlaying ? (
+                    {playing && isCurrentItem(song.songId) ? (
                       <img
                         src={playingGif}
                         className="w-6 h-6 group-hover:hidden"
                       />
                     ) : (
-                      <span className="group-hover:hidden">{index+1}</span>
+                      <span className="group-hover:hidden">{index + 1}</span>
                     )}
                   </div>
                   <div className="hidden items-center justify-center group-hover:flex">
-                    <button>
-                      <Icon name="play" size={20} />
+                    <button onClick={() => updateCurrent(song)}>
+                      <Icon
+                        name={isCurrentItem(song.songId) ? "pause" : "play"}
+                        size={22}
+                      />
                     </button>
                   </div>
                 </Table.Cell>

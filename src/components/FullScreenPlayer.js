@@ -28,23 +28,23 @@ function FullScreenPlayer({ toggle, state, controls }) {
     >
       <div
         className="absolute inset-0 object-cover bg-center bg-cover blur-md opacity-30"
-        style={{ backgroundImage: `url(${current.album.coverImageUrl})` }}
+        style={{ backgroundImage: `url(${current.album.albumCoverImageUrl})` }}
       />
 
       <div className="absolute opacity-70 top-8 left-8 gap-x-4 text-white flex items-center">
         <Icon size={34} name="logo" />
         <div className="text-xs">
           <p style={{ fontSize: 11 }}>PLAYING FROM PLAYLIST</p>
-          <h6 className="font-semibold mt-0.5">{current.name}</h6>
+          <h6 className="font-semibold mt-0.5">{current.songName}</h6>
         </div>
       </div>
 
       <div className="absolute left-8 bottom-36 flex items-center gap-x-5">
-        <img src={current.album.coverImageUrl} alt="" className="w-24 h-24 object-cover" />
+        <img src={current.album.albumCoverImageUrl} alt="" className="w-24 h-24 object-cover" />
         <div className="self-end">
-          <h3 className="text-3xl font-bold">{current.name}</h3>
+          <h3 className="text-3xl font-bold">{current.songName}</h3>
           <p className="text-sm font-medium opacity-50">
-            {current.album.artist.name}
+            {current.album.artist.artistName}
           </p>
         </div>
       </div>
