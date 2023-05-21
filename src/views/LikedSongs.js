@@ -124,7 +124,7 @@ export default function LikedSongs() {
             </Table.Row>
           </Table.Header>
           <Table.Body>
-            {songs.map((song) => (
+            {songs.map((song, index) => (
               <Table.Row className="h-14 group hover:bg-[#2d2d2d]">
                 <Table.Cell className="w-40">
                   <div className="text-[#a7a7a7] font-semibold text-sm flex items-center justify-center">
@@ -134,7 +134,7 @@ export default function LikedSongs() {
                         className="w-6 h-6 group-hover:hidden"
                       />
                     ) : (
-                      <span className="group-hover:hidden">{index++}</span>
+                      <span className="group-hover:hidden">{index+1}</span>
                     )}
                   </div>
                   <div className="hidden items-center justify-center group-hover:flex">

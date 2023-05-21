@@ -15,10 +15,8 @@ export default function Episodes() {
 
   useEffect(() => {
     let userEpisodeService = new UserEpisodeService();
-    userEpisodeService.getUserEpisodes().then((result) => {
-      setUserEpisodes(
-        result.data.data.filter((userEpisode) => userEpisode.userId === userId)
-      );
+    userEpisodeService.getByUserId(userId).then((res) => {
+      setUserEpisodes(res.data.data);
     });
 
     let episodeIds = [];
@@ -88,12 +86,14 @@ export default function Episodes() {
                 </div>
                 <div>
                   <div className="text-white font-semibold hover:underline hover:cursor-pointer">
-                    <NavLink to="/episode-detail">
+                    <NavLink to={`/episode-detail/${episode.episodeId}`}>
                       {episode.episodeName}
                     </NavLink>
                   </div>
                   <div className="text-sm text-white font-semibold hover:underline hover:cursor-pointer">
-                    <NavLink to="/podcast-detail">
+                    <NavLink
+                      to={`/podcast-detail/${episode.podcast.podcastId}`}
+                    >
                       {episode.podcast.podcastName}
                     </NavLink>
                   </div>
@@ -123,7 +123,7 @@ export default function Episodes() {
                         <Icon name="tick" />
                       </span>
                       <Popup
-                        className="text-sm bg-black px-2 py-1 font-semibold "                        
+                        className="text-sm bg-black px-2 py-1 font-semibold "
                         trigger={
                           <span className="invisible group-hover:visible">
                             <Icon name="dots" />

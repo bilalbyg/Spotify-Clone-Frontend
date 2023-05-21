@@ -7,12 +7,14 @@ import { useMatch } from "react-router-dom"
 
 function Navbar() {
 
-  const searchRoute = useMatch('/search')
+  const searchRoute = useMatch('/home')
+  const searchRoute2 = useMatch('/deneme')
 
   return (
     <nav className='h-[3.75rem] flex items-center justify-between px-8'>
       <Navigation/>
-      {searchRoute && <Search/>}
+      {(searchRoute || searchRoute2) && <Search/>}
+      {/* {searchRoute  && <Search/>} */}
       <Auth/>
 
     </nav>

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Icon } from "../Icons";
 import PlaylistDropzone from "./PlaylistDropzone";
-import axios from "axios";
 
 const Modal = ({ openModal, onClose, data, playlist }) => {
   if (!openModal) return null;

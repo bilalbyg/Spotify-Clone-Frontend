@@ -14,6 +14,10 @@ import Account from "./views/Account";
 import LikedSongs from "./views/LikedSongs";
 import CreatePlaylist from "./views/CreatePlaylist";
 import Deneme from "./views/Deneme";
+import AlbumDetail from "./views/AlbumDetail";
+import ArtistDetail from "./views/ArtistDetail";
+import NotFound from "./views/NotFound";
+import Category from "./views/Category";
 
 function App() {
   return (
@@ -51,7 +55,7 @@ function App() {
             }
           />
           <Route
-            path="/playlist"
+            path="/playlist/:playlistId"
             exact
             element={
               localStorage.getItem("currentUser") ? <Playlist /> : <Login />
@@ -65,7 +69,7 @@ function App() {
             }
           />
           <Route
-            path="/episode-detail"
+            path="/episode-detail/:episodeId"
             exact
             element={
               localStorage.getItem("currentUser") ? (
@@ -76,7 +80,7 @@ function App() {
             }
           />
           <Route
-            path="/podcast-detail"
+            path="/podcast-detail/:podcastId"
             exact
             element={
               localStorage.getItem("currentUser") ? (
@@ -110,21 +114,39 @@ function App() {
                 <Login />
               )
             }
-          />          
+          />
           <Route
-          path="/deneme"
-          exact
-          element={
-            localStorage.getItem("currentUser") ? (
-              <Deneme />
-            ) : (
-              <Login />
-            )
-          }
-        />
+            path="/deneme"
+            exact
+            element={
+              localStorage.getItem("currentUser") ? <Deneme /> : <Login />
+            }
+          />
+          <Route
+            path="/album-detail/:albumId"
+            exact
+            element={
+              localStorage.getItem("currentUser") ? <AlbumDetail /> : <Login />
+            }
+          />
+          <Route
+            path="/artist-detail/:artistId"
+            exact
+            element={
+              localStorage.getItem("currentUser") ? <ArtistDetail /> : <Login />
+            }
+          />
+          <Route
+            path="/category/:categoryId"
+            exact
+            element={
+              localStorage.getItem("currentUser") ? <Category /> : <Login />
+            }
+          />
         </Route>
         <Route path="/login" exact element={<Login />} />
         <Route path="/register" exact element={<Register />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </Router>
   );

@@ -1,6 +1,16 @@
 import axios from "axios";
 
 export default class UserLikedSongService {
+
+    // Singleton Pattern
+    static instance = null;
+    static getInstance() {
+      if (UserLikedSongService.instance === null) {
+        UserLikedSongService.instance = new UserLikedSongService();
+      }
+      return this.instance;
+    }
+
   getUserLikedSongs() {
     return axios.get("http://localhost:8080/api/user-liked-songs/getall", {
       headers: {
@@ -25,6 +35,17 @@ export default class UserLikedSongService {
   getByUserIdAndSongId(userId, songId) {
     return axios.get(
       `http://localhost:8080/api/user-liked-songs/getByUserIdAndSongId?userId=${userId}&songId=${songId}`,
+      {
+        headers: {
+          Authorization: localStorage.getItem("tokenKey"),
+        },
+      }
+    );
+  }
+
+  getByUserId(userId) {
+    return axios.get(
+      `http://localhost:8080/api/user-liked-songs/getByUserId?userId=${userId}`,
       {
         headers: {
           Authorization: localStorage.getItem("tokenKey"),

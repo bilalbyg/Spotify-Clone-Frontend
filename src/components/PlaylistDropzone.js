@@ -9,9 +9,8 @@ export default function PlaylistDropzone({ playlistId }) {
   const [playlist, setPlaylist] = useState([]);
 
   useEffect(() => {
-    let playlistService = new PlaylistService();
+    let playlistService = PlaylistService.getInstance();
     playlistService.getPlaylistById(playlistId).then((res) => {
-      console.log(res.data.data);
       setPlaylist(res.data.data);
 
       if (playlist.playlistCoverImageUrl !== null) {
@@ -28,7 +27,21 @@ export default function PlaylistDropzone({ playlistId }) {
   }, [playlistId]);
 
   useEffect(() => {
-    
+    let playlistService = PlaylistService.getInstance();
+    playlistService.getPlaylistById(playlistId).then((res) => {
+      setPlaylist(res.data.data);
+
+      if (playlist.playlistCoverImageUrl !== null) {
+        if (
+          playlist.playlistCoverImageUrl !== "" ||
+          playlist.playlistCoverImageUrl !== ""
+        ) {
+          setHasCoverImage(true);
+        } else {
+          setHasCoverImage(false);
+        }
+      }
+    });
   }, [playlist])
 
   const onDrop = useCallback((acceptedFiles) => {

@@ -6,7 +6,6 @@ import Playlists from "./Sidebar/Playlists";
 import DownloadApp from "./Sidebar/DownloadApp";
 import { NavLink } from "react-router-dom";
 import PlaylistService from "../services/playlistService";
-import PlaylistCoverImageService from "../services/playlistCoverImageService";
 import { useDispatch, useSelector } from "react-redux";
 import { setCreatedPlaylist } from "../stores/createdPlaylist";
 

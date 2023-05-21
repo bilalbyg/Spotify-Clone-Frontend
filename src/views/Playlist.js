@@ -1,18 +1,25 @@
 import React, { useState, useEffect } from "react";
 import { Icon } from "../Icons";
-import { Table } from "semantic-ui-react";
 import { useDispatch, useSelector } from "react-redux";
 import SongService from "../services/songService";
 import UserLikedSongService from "../services/userLikedSongService";
 import playingGif from "../img/playing.gif";
 import { setCurrent } from "../stores/player";
-import moment from "moment";
 import { secondsToTime } from "../utils";
-import CustomDropzone from "../components/CustomDropzone";
 import PlaylistDropzone from "../components/PlaylistDropzone";
+import { NavLink, useParams } from "react-router-dom";
+import PlaylistItemContextMenu from "../components/ContextMenus/PlaylistItemContextMenu";
+import PlaylistService from "../services/playlistService";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 export default function Playlist() {
-  const playlist = useSelector((state) => state.playlist);
+  const { playlistId } = useParams();
+
+  const [playlist, setPlaylist] = useState([]);
+
+  const [showContextMenu, setShowContextMenu] = useState(true);
+  const [clickedSongId, setClickedSongId] = useState(0);
 
   const [songs, setSongs] = useState([]);
 
@@ -22,7 +29,20 @@ export default function Playlist() {
 
   let userId = parseInt(localStorage.getItem("currentUser"));
 
+  const deleteNotify = () =>
+    toast.success("Şarkı çalma listesinden kaldırıldı", {
+      position: "bottom-center",
+      autoClose: 5000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      progress: undefined,
+      theme: "colored",
+    });
+
   const updateCurrent = (song) => {
+    console.log(song);
     if (current.songId === song.songId) {
       if (playing) {
         controls.pause();
@@ -34,101 +54,104 @@ export default function Playlist() {
     }
   };
 
-  useEffect(() => {
-    console.log(playing);
-  }, [playing]);
-
   const isCurrentItem = (songId) => {
     return current?.songId === songId && playing;
   };
 
-  let index = 1;
-
   useEffect(() => {
-    let songService = new SongService();
-    let queryString = JSON.stringify(playlist?.playlist?.playlistSongs);
+    console.log(playlistId);
+
+    let playlistService = PlaylistService.getInstance();
+    playlistService.getPlaylistById(parseInt(playlistId)).then((res) => {
+      console.log(res.data.data);
+      setPlaylist(res.data.data);
+    });
+
+    let songService = SongService.getInstance();
+    let queryString = JSON.stringify(playlist?.playlistSongs);
     let toSendQueryString = queryString?.substring(1, queryString.length - 1);
     songService.getSongsById(toSendQueryString).then((result) => {
-      console.log(result.data.data);
       setSongs(result.data.data);
     });
+    playlistDuration();
   }, []);
 
   useEffect(() => {
-    let songService = new SongService();
-    let queryString = JSON.stringify(playlist?.playlist?.playlistSongs);
+    let playlistService = PlaylistService.getInstance();
+    playlistService.getPlaylistById(parseInt(playlistId)).then((res) => {
+      console.log(res.data.data);
+      setPlaylist(res.data.data);
+    });
+
+    let songService = SongService.getInstance();
+    let queryString = JSON.stringify(playlist?.playlistSongs);
     let toSendQueryString = queryString?.substring(1, queryString.length - 1);
     songService.getSongsById(toSendQueryString).then((result) => {
       setSongs(result.data.data);
     });
+
+    playlistDuration();
   }, [playlist]);
+
+  const handleContextMenu = (e, songId) => {
+    e.preventDefault();
+    setShowContextMenu(true);
+    setClickedSongId(songId);
+  };
 
   const likeSong = (songId) => {
     var request = {
       songId: songId,
       userId: userId,
     };
-    let userLikedSongService = new UserLikedSongService();
+    let userLikedSongService = UserLikedSongService.getInstance();
     userLikedSongService
       .addUserLikedSong(request)
-      .then((res) => console.log(res))
-      .catch((err) => console.log(err));
+      .then((res) => {})
+      .catch((err) => {});
   };
 
   const playlistDuration = () => {
     let minute = 0;
     let second = 0;
     songs.map((song) => {
-      console.log(song.songName);
       let duration = song.duration.toString().split(".");
-      console.log(duration);
       minute = minute + parseInt(duration[0]);
       second = second + parseInt(duration[1]);
     });
     second = second + minute * 60;
 
     let duration = secondsToTime(second).split(":");
-    console.log(duration);
     return duration;
   };
 
-  useEffect(() => {
-    playlistDuration();
-  }, []);
-
   return (
-    // remove fragment, add "?" to after playlists
-
     <>
+      <ToastContainer
+        position="bottom-center"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="colored"
+      />
       {
-        <div>
+        <div onClick={() => setShowContextMenu(false)}>
           {/* TOP */}
           <div className="flex flex-row justify-end relative pb-6 px-8 bg-gradient-to-t from-[#272727] to-[#575757] min-h-[21.25rem] max-h-[31.25rem]">
-            {/* {playlist.playlist.playlistCoverImageUrl !== "" ? (
-              <div className="absolute left-6 bottom-6 w-56 h-56">
-                <img src={playlist?.playlist?.playlistCoverImageUrl} />
-              </div>
-            ) : (
-              <div className="group absolute left-6 bottom-6 w-56 h-56 bg-active rounded flex items-center justify-center text-[#7f7f7f]">
-                <div className="block group-hover:hidden">
-                  <Icon name="music" size={70} />
-                </div>
-                <div className="hidden group-hover:flex group-hover:cursor-pointer flex-col justify-center items-center text-white gap-y-2">
-                  <Icon name="edit" size={50} />
-                  <span className="font-semibold">Fotoğraf Seç</span>
-                </div>
-              </div>
-            )} */}
             <div className="absolute left-6 bottom-6 bg-active w-56 h-56">
-              <PlaylistDropzone playlistId={playlist.playlist.playlistId}/>
+              <PlaylistDropzone playlistId={playlist.playlistId} />
             </div>
-
             <div className="flex flex-col h-80 w-[60rem] absolute pt-36 pl-7">
-              <span className="font-semibold text-sm tracking-wide z-50 pl-1">
+              <span className="font-semibold text-sm tracking-wide z-40 pl-1">
                 Çalma Listesi
               </span>
               <span className="text-8xl font-bold tracking-tighter">
-                <h1>{playlist?.playlist?.playlistName}</h1>
+                <h1>{playlist?.playlistName}</h1>
               </span>
               <div className="flex flex-row items-center gap-x-2 pt-4">
                 <div className="flex flex-row gap-x-2 items-center">
@@ -141,7 +164,7 @@ export default function Playlist() {
                 </div>
                 <span className="h-1 w-1 bg-white rounded-full inline-block" />
                 <span className="text-sm font-semibold">
-                  {playlist?.playlist?.playlistSongs?.length} şarkı,
+                  {playlist?.playlistSongs?.length} şarkı,
                 </span>
                 <span className="text-white opacity-70">
                   yaklaşık
@@ -185,40 +208,45 @@ export default function Playlist() {
           </div>
 
           <div className="flex justify-center w-full h-auto p-4">
-            <Table className="w-full">
-              <Table.Header>
-                <Table.Row>
-                  <Table.HeaderCell className="w-[5%]">
-                    <span className="text-sm font-semibold text-[#8e8e8e]">
+            <div className="w-full">
+              <div className="w-full">
+                <div className="flex flex-row w-full pb-3">
+                  <div className="w-[5%]">
+                    <span className="flex items-center justify-center text-sm font-semibold text-[#8e8e8e]">
                       #
                     </span>
-                  </Table.HeaderCell>
-                  <Table.HeaderCell className="w-[40%]">
-                    <span className="flex justify-start text-sm font-semibold text-[#8e8e8e]">
+                  </div>
+                  <div className="w-[40%]">
+                    <span className="flex items-center justify-start text-sm font-semibold text-[#8e8e8e]">
                       Başlık
                     </span>
-                  </Table.HeaderCell>
-                  <Table.HeaderCell className="w-[20%]">
-                    <span className="flex justify-start text-sm font-semibold text-[#8e8e8e]">
+                  </div>
+                  <div className="w-[20%]">
+                    <span className="flex items-center justify-start text-sm font-semibold text-[#8e8e8e]">
                       Albüm
                     </span>
-                  </Table.HeaderCell>
-                  <Table.HeaderCell className="w-[20%]">
-                    <span className="flex justify-start text-sm font-semibold text-[#8e8e8e]">
+                  </div>
+                  <div className="w-[20%]">
+                    <span className="flex items-center justify-start text-sm font-semibold text-[#8e8e8e]">
                       Eklenme Tarihi
                     </span>
-                  </Table.HeaderCell>
-                  <Table.HeaderCell className="w-[15%] pr-4">
+                  </div>
+                  <div className="flex items-center justify-start w-[15%] pl-10">
                     <button className="text-[#8e8e8e]">
                       <Icon name="time" size={16} />
                     </button>
-                  </Table.HeaderCell>
-                </Table.Row>
-              </Table.Header>
-              <Table.Body>
-                {songs.map((song) => (
-                  <Table.Row className="h-14 group hover:bg-[#2d2d2d]">
-                    <Table.Cell className="w-40">
+                  </div>
+                </div>
+              </div>
+              <div>
+                {songs.map((song, index) => (
+                  <div
+                    className="flex flex-row h-14 group hover:bg-[#2d2d2d] rounded"
+                    onContextMenu={(e) => {
+                      handleContextMenu(e, song.songId);
+                    }}
+                  >
+                    <div className="w-[5%] flex items-center justify-center">
                       <div className="text-[#a7a7a7] font-semibold text-sm flex items-center justify-center">
                         {playing && isCurrentItem(song.songId) ? (
                           <img
@@ -226,7 +254,9 @@ export default function Playlist() {
                             className="w-6 h-6 group-hover:hidden"
                           />
                         ) : (
-                          <span className="group-hover:hidden">{index++}</span>
+                          <span className="group-hover:hidden">
+                            {index + 1}
+                          </span>
                         )}
                       </div>
                       <div className="hidden items-center justify-center group-hover:flex">
@@ -237,14 +267,14 @@ export default function Playlist() {
                           />
                         </button>
                       </div>
-                    </Table.Cell>
-                    <Table.Cell className="w-[200px]">
+                    </div>
+                    <div className="w-[40%] flex items-center justify-start">
                       <div className="flex flex-row gap-x-3 items-center justify-start">
                         <img
                           className="w-10 h-10"
                           src={song.album.albumCoverImageUrl}
                         />
-                        <div className="flex flex-col justify-start font-semibold">
+                        <div className="flex flex-col justify-start font-semibold relative">
                           <span
                             className={`${
                               playing && isCurrentItem(song.songId)
@@ -257,17 +287,30 @@ export default function Playlist() {
                           <span className="text-[#a7a7a7] text-sm hover:underline hover:text-white hover:cursor-pointer">
                             {song.album.artist.artistName}
                           </span>
+                          <div
+                            className={`absolute left-52 ${
+                              showContextMenu && clickedSongId === song.songId
+                                ? "flex"
+                                : "hidden"
+                            } w-52 items-center justify-center p-1 rounded-sm bg-active text-sm font-semibold text-contextMenu tracking-tight`}
+                          >
+                            <PlaylistItemContextMenu
+                              playlistId={playlist.playlistId}
+                              song={song}
+                              deleteNotify={deleteNotify}
+                            />
+                          </div>
                         </div>
                       </div>
-                    </Table.Cell>
-                    <Table.Cell className="w-40 text-[#a7a7a7] tracking-tighter font-semibold hover:underline hover:text-white text-sm">
+                    </div>
+                    <div className="w-[20%] flex items-center justify-start text-[#a7a7a7] tracking-tighter font-semibold hover:underline hover:text-white text-sm">
                       {song.album.albumName}
-                    </Table.Cell>
-                    <Table.Cell className="w-40 text-[#a7a7a7] font-semibold text-sm">
+                    </div>
+                    <div className="w-[20%] flex items-center justify-start text-[#a7a7a7] font-semibold text-sm">
                       <span>6 Şub 2022</span>
-                    </Table.Cell>
-                    <Table.Cell className="w-40 pr-4">
-                      <div className="flex flex-row items-center justify-between">
+                    </div>
+                    <div className="w-[15%] flex items-center justify-start">
+                      <div className="flex flex-row w-full items-center justify-start gap-x-5">
                         <button
                           onClick={() => likeSong(song.songId)}
                           className="invisible group-hover:visible"
@@ -281,11 +324,11 @@ export default function Playlist() {
                           <Icon name="dots" size={20} />
                         </button>
                       </div>
-                    </Table.Cell>
-                  </Table.Row>
+                    </div>
+                  </div>
                 ))}
-              </Table.Body>
-            </Table>
+              </div>
+            </div>
           </div>
           <hr className="h-px my-8 bg-[#2a2a2a] border-0" />
         </div>
