@@ -5,6 +5,7 @@ import { Icon } from "../Icons";
 import Category from "../components/Category";
 import SliderItem from "../components/SliderItem";
 import CategoryService from "../services/categoryService";
+import { NavLink } from "react-router-dom";
 
 export default function Search() {
   const favoritesRef = useRef();
@@ -74,23 +75,27 @@ export default function Search() {
             className="flex scrollable overflow-x gap-x-6"
             innerRef={favoritesRef}
           >
-            <div
-              style={{ background: "#e13300" }}
-              className="rounded-lg relative w-[27.375rem] h-[13.75rem] flex-shrink-0"
-            >
-              <div className="absolute inset-0 overflow-hidden">
-                <h3 className="p-4 text-[2.5rem] tracking-tighter font-semibold ">
-                  Podcast'ler
-                </h3>
-                <img
-                  className="shadow-spotify w-32 h-32 rotate-[25deg] translate-x-[18%] translate-y-[5%] absolute bottom-0 right-0"
-                  src="https://i.scdn.co/image/ab6765630000ba8a2b41fc062049680d64487588"
-                />
+            <NavLink to={"/podcasts"}>
+              <div
+                style={{ background: "#e13300" }}
+                className="hover:cursor-pointer rounded-lg relative w-[27.375rem] h-[13.75rem] flex-shrink-0"
+              >
+                <div className="absolute inset-0 overflow-hidden">
+                  <h3 className="p-4 text-[2.5rem] tracking-tighter font-semibold ">
+                    Podcast'ler
+                  </h3>
+                  <img
+                    className="shadow-spotify w-32 h-32 rotate-[25deg] translate-x-[18%] translate-y-[5%] absolute bottom-0 right-0"
+                    src="https://i.scdn.co/image/ab6765630000ba8a2b41fc062049680d64487588"
+                  />
+                </div>
               </div>
-            </div>
+            </NavLink>
 
             {categories.map((category) => (
-              <SliderItem key={category.categoryId} category={category} />
+              <NavLink to={`/category/${category.categoryId}`}>
+                <SliderItem key={category.categoryId} category={category} />
+              </NavLink>
             ))}
           </ScrollContainer>
         </div>
@@ -100,19 +105,29 @@ export default function Search() {
 
         <div className="grid grid-cols-5 gap-6">
           {categories.map((category) => (
-            <Category key={category.categoryId} category={category} />
+            <NavLink to={`/category/${category.categoryId}`}>
+              <Category key={category.categoryId} category={category} />{" "}
+            </NavLink>
           ))}
           {categories.map((category) => (
-            <Category key={category.categoryId} category={category} />
+            <NavLink to={`/category/${category.categoryId}`}>
+              <Category key={category.categoryId} category={category} />{" "}
+            </NavLink>
           ))}
           {categories.map((category) => (
-            <Category key={category.categoryId} category={category} />
+            <NavLink to={`/category/${category.categoryId}`}>
+              <Category key={category.categoryId} category={category} />{" "}
+            </NavLink>
           ))}
           {categories.map((category) => (
-            <Category key={category.categoryId} category={category} />
+            <NavLink to={`/category/${category.categoryId}`}>
+              <Category key={category.categoryId} category={category} />{" "}
+            </NavLink>
           ))}
           {categories.map((category) => (
-            <Category key={category.categoryId} category={category} />
+            <NavLink to={`/category/${category.categoryId}`}>
+              <Category key={category.categoryId} category={category} />{" "}
+            </NavLink>
           ))}
         </div>
       </section>

@@ -7,6 +7,7 @@ import UserLikedSongService from "../services/userLikedSongService";
 import SongService from "../services/songService";
 import { useDispatch, useSelector } from "react-redux";
 import { setCurrent } from "../stores/player";
+import { NavLink } from "react-router-dom";
 
 export default function LikedSongs() {
   const userId = parseInt(localStorage.getItem("currentUser"));
@@ -175,14 +176,20 @@ export default function LikedSongs() {
                       <span className="text-white tracking-tight hover:underline">
                         {song.songName}
                       </span>
-                      <span className="text-[#a7a7a7] text-sm hover:underline hover:text-white hover:cursor-pointer">
-                        {song.album.artist.artistName}
-                      </span>
+                      <NavLink
+                        to={`/artist-detail/${song.album.artist.artistId}`}
+                      >
+                        <span className="text-[#a7a7a7] text-sm hover:underline hover:text-white hover:cursor-pointer">
+                          {song.album.artist.artistName}
+                        </span>
+                      </NavLink>
                     </div>
                   </div>
                 </Table.Cell>
-                <Table.Cell className="w-40 text-[#a7a7a7] tracking-tighter font-semibold hover:underline hover:text-white text-sm">
-                  {song.album.albumName}
+                <Table.Cell className="w-40 hover:cursor-pointer text-[#a7a7a7] tracking-tighter font-semibold hover:underline hover:text-white text-sm">
+                  <NavLink to={`/album-detail/${song.album.albumId}`}>
+                    {song.album.albumName}
+                  </NavLink>
                 </Table.Cell>
                 <Table.Cell className="w-40 text-[#a7a7a7] font-semibold text-sm">
                   <span>6 Şub 2022</span>

@@ -35,7 +35,7 @@ export default function SongSectionItem({ item }) {
         />
         <button
             onClick={updateCurrent}
-          className={`text-white w-10 h-10 rounded-full bg-primary absolute bottom-2 right-2 items-center justify-center ${
+          className={`text-white w-10 h-10 rounded-full outline-none bg-primary absolute bottom-2 right-2 items-center justify-center ${
             !isCurrentItem ? "hidden" : "flex"
           } group-hover:flex group-focus:flex`}
         >

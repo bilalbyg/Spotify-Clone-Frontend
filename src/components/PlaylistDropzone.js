@@ -24,6 +24,24 @@ export default function PlaylistDropzone({ playlistId }) {
         }
       }
     });
+  }, []);
+
+  useEffect(() => {
+    let playlistService = PlaylistService.getInstance();
+    playlistService.getPlaylistById(playlistId).then((res) => {
+      setPlaylist(res.data.data);
+
+      if (playlist.playlistCoverImageUrl !== null) {
+        if (
+          playlist.playlistCoverImageUrl !== "" ||
+          playlist.playlistCoverImageUrl !== ""
+        ) {
+          setHasCoverImage(true);
+        } else {
+          setHasCoverImage(false);
+        }
+      }
+    });
   }, [playlistId]);
 
   useEffect(() => {

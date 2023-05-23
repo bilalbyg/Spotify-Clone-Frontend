@@ -18,7 +18,7 @@ export default function ArtistSectionItem({ item }) {
       <NavLink to={`/artist-detail/${item.artistId}`} className="text-white overflow-hidden overflow-ellipsis whitespace-nowrap font-semibold hover:underline">
         {item.artistName}
       </NavLink>
-      <span className="hover:underline line-clamp-1 text-[rgb(167,167,167)] text-sm mt-1 font-semibold">
+      <span className="line-clamp-1 text-[rgb(167,167,167)] text-sm mt-1 font-semibold">
         Sanatçı
       </span>
     </NavLink>

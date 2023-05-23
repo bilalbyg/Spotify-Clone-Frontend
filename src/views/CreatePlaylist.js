@@ -12,7 +12,7 @@ export default function CreatePlaylist() {
 
   const [thisPlaylist, setThisPlaylist] = useState([]);
 
-  const createdPlaylist = useSelector((state) => state.createdPlaylist)
+  const createdPlaylistState = useSelector((state) => state.createdPlaylist)
 
   useEffect(() => {
     let playlistService = new PlaylistService();
@@ -37,7 +37,7 @@ export default function CreatePlaylist() {
   }, [playlists, playlists.length]);
 
   useEffect(() => {
-    setThisPlaylist(createdPlaylist.createdPlaylist)
+    setThisPlaylist(createdPlaylistState.createdPlaylist)
   }, [playlists.length])
 
   return (
@@ -62,7 +62,7 @@ export default function CreatePlaylist() {
           </span>
           <span className="font-bold">
             <h1 className="text-8xl font-bold tracking-tight">
-              {playlists.length}. Çalma Listem
+              {createdPlaylistState.createdPlaylist ? createdPlaylistState.createdPlaylist.playlistName : playlists.length + ". Çalma Listem"}
             </h1>
           </span>
           <div className="flex items-center pt-4 px-3">

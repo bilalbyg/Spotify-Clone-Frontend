@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Icon } from "../Icons";
 import useColorThief from "use-color-thief";
 import AlbumService from "../services/albumService";
@@ -11,6 +11,8 @@ import { useDispatch } from "react-redux";
 import { setCurrent } from "../stores/player";
 import playingGif from "../img/playing.gif";
 import UserLikedArtistService from "../services/userLikedArtistService";
+import UserLikedSongService from "../services/userLikedSongService";
+import PlaylistService from "../services/playlistService";
 
 export default function ArtistDetail() {
   const [artist, setArtist] = useState([]);
@@ -20,10 +22,12 @@ export default function ArtistDetail() {
   const [clickedSongId, setClickedSongId] = useState(0);
   const [isLiked, setIsLiked] = useState(false);
   const [userLikedArtist, setUserLikedArtist] = useState([]);
+  const [playlists, setPlaylists] = useState([])
 
   const dispatch = useDispatch();
 
   let userId = parseInt(localStorage.getItem("currentUser"));
+  const contextMenuRef = useRef(null);
 
   const { artistId } = useParams();
   const { current, playing, controls } = useSelector((state) => state.player);
@@ -60,11 +64,14 @@ export default function ArtistDetail() {
   };
 
   useEffect(() => {
-    let handler = () => {
-      setShowContextMenu(false);
-    };
-    document.addEventListener("mousedown", handler);
-  });
+    document.addEventListener("click", handleClickOutside, true);
+  }, []);
+
+  const handleClickOutside = (e) => {
+    if (!contextMenuRef.current.contains(e.target)) {
+      setShowContextMenu(false)
+    }
+  };
 
   useEffect(() => {
     let artistService = ArtistService.getInstance();
@@ -87,7 +94,7 @@ export default function ArtistDetail() {
     userLikedArtistService
       .getByUserIdAndArtistId(userId, artistId)
       .then((res) => {
-        if(res.data.data !== null){
+        if (res.data.data !== null) {
           setUserLikedArtist(res.data.data);
           setIsLiked(true);
         }
@@ -95,6 +102,11 @@ export default function ArtistDetail() {
       .catch((err) => {
         setIsLiked(false);
       });
+
+    let playlistService = PlaylistService.getInstance();
+    playlistService.getByPlaylistUserId(userId).then((res) => {
+      setPlaylists(res.data.data);
+    });
   }, []);
 
   useEffect(() => {
@@ -102,13 +114,13 @@ export default function ArtistDetail() {
     artistService.getById(parseInt(artistId)).then((res) => {
       setArtist(res.data.data);
     });
-    
+
     let userLikedArtistService = UserLikedArtistService.getInstance();
 
     userLikedArtistService
       .getByUserIdAndArtistId(userId, artistId)
       .then((res) => {
-        if(res.data.data !== null){
+        if (res.data.data !== null) {
           setUserLikedArtist(res.data.data);
           setIsLiked(true);
         }
@@ -116,6 +128,11 @@ export default function ArtistDetail() {
       .catch((err) => {
         setIsLiked(false);
       });
+
+    let playlistService = PlaylistService.getInstance();
+    playlistService.getByPlaylistUserId(userId).then((res) => {
+      setPlaylists(res.data.data);
+    });
   }, [artistId]);
 
   const likeArtist = () => {
@@ -131,11 +148,25 @@ export default function ArtistDetail() {
   };
 
   const unlikeArtist = () => {
-    let userLikedArtistService = UserLikedArtistService.getInstance()
-    userLikedArtistService.delete(userLikedArtist.userLikedArtistId).then((res)=>{
-      console.log(res.data);
-      setIsLiked(false)
-    })
+    let userLikedArtistService = UserLikedArtistService.getInstance();
+    userLikedArtistService
+      .delete(userLikedArtist.userLikedArtistId)
+      .then((res) => {
+        console.log(res.data);
+        setIsLiked(false);
+      });
+  };
+
+  const likeSong = (songId) => {
+    var request = {
+      songId: songId,
+      userId: userId,
+    };
+    let userLikedSongService = UserLikedSongService.getInstance();
+    userLikedSongService
+      .addUserLikedSong(request)
+      .then((res) => {})
+      .catch((err) => {});
   };
 
   return (
@@ -180,14 +211,11 @@ export default function ArtistDetail() {
         {/* MIDDLE */}
         <div className="flex flex-row items-center gap-x-4 h-24 px-8 py-4">
           <button
-            //onClick={controls[state?.playing ? "pause" : "play"]}
             className="h-16 w-16 flex items-center justify-center bg-primary text-black rounded-full hover:scale-[1.06]"
           >
-            {/* name={`${state?.playing ? "pause" : "play"}`} */}
             <Icon size={30} name="play" />
           </button>
           <div>
-            {JSON.stringify(isLiked)}
             {isLiked ? (
               <button
                 onClick={() => unlikeArtist()}
@@ -299,31 +327,36 @@ export default function ArtistDetail() {
                                     : "hidden"
                                 } w-52 items-center justify-center p-1 rounded-sm bg-active text-sm font-semibold text-contextMenu tracking-tight`}
                               >
-                                <ul className="w-full">
+                                <ul ref={contextMenuRef} className="w-full">
                                   <li className="flex items-center justify-start h-10 hover:bg-podcast px-2 cursor-pointer">
                                     <button>
-                                      <NavLink to="/#">Sanatçıya git</NavLink>
+                                      <NavLink to={`/artist-detail/${song.album.artist.artistId}`}>Sanatçıya git</NavLink>
                                     </button>
                                   </li>
                                   <li className="flex items-center justify-start h-10 hover:bg-podcast px-2 cursor-pointer">
                                     <button>
-                                      <NavLink to="/#">Albüme git</NavLink>
+                                      <NavLink to={`/album-detail/${song.album.albumId}`}>Albüme git</NavLink>
                                     </button>
                                   </li>
                                   <li className="relative flex items-center justify-between h-10 hover:bg-podcast group/playlist px-2 cursor-pointer">
                                     <button>Çalma listesine ekle</button>
                                     <Icon name="next" size={14} />
-                                    <div className="absolute left-52 top-0 w-52 bg-active p-1 hidden items-center group-hover/playlist:flex justify-center text-sm font-semibold text-contextMenu tracking-tight">
-                                      <ul className="w-full flex-items-center justify-center">
-                                        <li className="flex items-center justify-start w-full px-2 h-10 hover:bg-podcast">
-                                          <button>Playlist 1</button>
-                                        </li>
-                                        <li className="flex items-center justify-start w-full px-2 h-10 hover:bg-podcast">
-                                          <button>Playlist 2</button>
-                                        </li>
-                                        <li className="flex items-center justify-start w-full px-2 h-10 hover:bg-podcast">
-                                          <button>Playlist 3</button>
-                                        </li>
+                                    <div className="absolute left-52 bottom-0 w-52 bg-active p-1 hidden items-center group-hover/playlist:flex justify-center text-sm font-semibold text-contextMenu tracking-tight">
+                                      <ul className="w-full flex flex-col items-center justify-center">
+                                        {playlists.map((playlist) => (
+                                          <li className="flex items-center justify-start w-full px-2 h-10 hover:bg-podcast">
+                                            <button
+                                              onClick={() =>
+                                                addToPlaylist(
+                                                  playlist.playlistId,
+                                                  song.songId
+                                                )
+                                              }
+                                            >
+                                              {playlist.playlistName}
+                                            </button>
+                                          </li>
+                                        ))}
                                       </ul>
                                     </div>
                                   </li>
@@ -377,14 +410,12 @@ export default function ArtistDetail() {
                       className="w-6 h-6 object-cover rounded-full"
                       src={artist.artistCoverImageUrl}
                     />
-                    <span className="font-semibold text-sm text-[#8e8e8e]">
+                    <span className="font-semibold text-sm text-[#8e8e8e] line-clamp-1">
                       {artist.artistName} Tarafından Paylaşıldı
                     </span>
                   </div>
-                  {/* <span className="font-bold mt-2">{albums[0].albumName}</span> */}
                   <span className="font-bold mt-2">Starry Night</span>
                   <span className="text-sm font-bold text-[#8e8e8e]">
-                    {/* {songs.filter((song) => song.album.albumId === albums[0].albumId).length > 1 ? "Album" : "Single"} */}
                     Single
                   </span>
                 </div>

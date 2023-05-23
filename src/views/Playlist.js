@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Icon } from "../Icons";
 import { useDispatch, useSelector } from "react-redux";
 import SongService from "../services/songService";
 import UserLikedSongService from "../services/userLikedSongService";
 import playingGif from "../img/playing.gif";
 import { setCurrent } from "../stores/player";
-import { secondsToTime } from "../utils";
 import PlaylistDropzone from "../components/PlaylistDropzone";
 import { NavLink, useParams } from "react-router-dom";
 import PlaylistItemContextMenu from "../components/ContextMenus/PlaylistItemContextMenu";
@@ -22,6 +21,7 @@ export default function Playlist() {
   const [clickedSongId, setClickedSongId] = useState(0);
 
   const [songs, setSongs] = useState([]);
+  const contextMenuRef = useRef(null);
 
   const dispatch = useDispatch();
 
@@ -59,8 +59,16 @@ export default function Playlist() {
   };
 
   useEffect(() => {
-    console.log(playlistId);
+    document.addEventListener("click", handleClickOutside, true);
+  }, []);
 
+  const handleClickOutside = (e) => {
+    if (!contextMenuRef.current.contains(e.target)) {
+      setShowContextMenu(false);
+    }
+  };
+
+  useEffect(() => {
     let playlistService = PlaylistService.getInstance();
     playlistService.getPlaylistById(parseInt(playlistId)).then((res) => {
       console.log(res.data.data);
@@ -79,7 +87,6 @@ export default function Playlist() {
   useEffect(() => {
     let playlistService = PlaylistService.getInstance();
     playlistService.getPlaylistById(parseInt(playlistId)).then((res) => {
-      console.log(res.data.data);
       setPlaylist(res.data.data);
     });
 
@@ -121,7 +128,10 @@ export default function Playlist() {
     });
     second = second + minute * 60;
 
-    let duration = secondsToTime(second).split(":");
+    const date = new Date(null);
+    date.setSeconds(second); // specify value for SECONDS here
+    const result = date.toISOString().slice(11, 19);
+    let duration = result.split(":");
     return duration;
   };
 
@@ -167,7 +177,7 @@ export default function Playlist() {
                   {playlist?.playlistSongs?.length} şarkı,
                 </span>
                 <span className="text-white opacity-70">
-                  yaklaşık
+                  yaklaşık{" "}
                   {playlistDuration()[0] > 0 ? (
                     <span>{playlistDuration()[0]} sa.</span>
                   ) : (
@@ -190,11 +200,7 @@ export default function Playlist() {
 
           {/* MIDDLE */}
           <div className="bg-[#222222] flex flex-row items-center gap-x-2 h-24 px-8 py-4">
-            <button
-              //onClick={controls[state?.playing ? "pause" : "play"]}
-              className="h-16 w-16 flex items-center justify-center bg-primary text-black rounded-full hover:scale-[1.06]"
-            >
-              {/* name={`${state?.playing ? "pause" : "play"}`} */}
+            <button className="h-16 w-16 flex items-center justify-center bg-primary text-black rounded-full hover:scale-[1.06]">
               <Icon size={30} name="play" />
             </button>
             {playlist.playlistUserId === userId && (
@@ -284,10 +290,16 @@ export default function Playlist() {
                           >
                             {song.songName}
                           </span>
-                          <span className="text-[#a7a7a7] text-sm hover:underline hover:text-white hover:cursor-pointer">
-                            {song.album.artist.artistName}
-                          </span>
+                          <NavLink
+                            to={`/artist-detail/${song.album.artist.artistId}`}
+                          >
+                            <span className="text-[#a7a7a7] text-sm hover:underline hover:text-white hover:cursor-pointer">
+                              {song.album.artist.artistName}
+                            </span>
+                          </NavLink>
+
                           <div
+                            ref={contextMenuRef}
                             className={`absolute left-52 ${
                               showContextMenu && clickedSongId === song.songId
                                 ? "flex"
@@ -304,7 +316,9 @@ export default function Playlist() {
                       </div>
                     </div>
                     <div className="w-[20%] flex items-center justify-start text-[#a7a7a7] tracking-tighter font-semibold hover:underline hover:text-white text-sm">
-                      {song.album.albumName}
+                      <NavLink to={`/album-detail/${song.album.albumId}`}>
+                        {song.album.albumName}
+                      </NavLink>
                     </div>
                     <div className="w-[20%] flex items-center justify-start text-[#a7a7a7] font-semibold text-sm">
                       <span>6 Şub 2022</span>

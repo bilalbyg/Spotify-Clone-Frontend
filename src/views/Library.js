@@ -195,40 +195,47 @@ export default function Library() {
               Çalma Listeleri
             </div>
             <div className="flex flex-row w-full flex-wrap gap-5 items-start justify-start">
-              <div className="flex flex-col gap-y-3 pt-14 items-start justify-center p-4 w-[24.4rem] h-[16rem] rounded-md bg-gradient-to-br from-[#450af5] to-[#8e8ee5]">
-                <p className="text-link text-sm font-semibold line-clamp-3">
-                  {songs.map((song) => (
-                    <span>
-                      {song.songName}
-                      <span className="h-1 w-1 mb-1 mx-2 bg-link rounded-full inline-block" />
-                      {song.album.artist.artistName} / 
-                    </span>
-                  ))}
-                </p>
-                <div className="text-[2rem] mt-4 text-white font-bold tracking-tight">
-                  Beğenilen Şarkılar
+              <NavLink to={"/liked-songs"}>
+                <div className="flex flex-col gap-y-3 pt-14 items-start justify-center p-4 w-[24.4rem] h-[16rem] rounded-md bg-gradient-to-br from-[#450af5] to-[#8e8ee5]">
+                  <p className="text-link text-sm font-semibold line-clamp-3">
+                    {songs.map((song) => (
+                      <span>
+                        {song.songName}
+                        <span className="h-1 w-1 mb-1 mx-2 bg-link rounded-full inline-block" />
+                        {song.album.artist.artistName} /
+                      </span>
+                    ))}
+                  </p>
+                  <div className="text-[2rem] mt-4 text-white font-bold tracking-tight">
+                    Beğenilen Şarkılar
+                  </div>
+                  <div className="text-white tracking-tight font-semibold">
+                    {songs.length} Beğenilen Şarkılar
+                  </div>
                 </div>
-                <div className="text-white tracking-tight font-semibold">
-                  {songs.length} Beğenilen Şarkılar
-                </div>
-              </div>
+              </NavLink>
+
               {playlists.map((playlist) => (
-                <div className="flex flex-col w-[11.6rem] h-[16rem] bg-[#181818] hover:bg-podcastHover cursor-pointer rounded-lg p-4">
-                  <img
-                    className="flex items-center justify-center p-1 rounded-lg"
-                    src={`${
-                      playlist.playlistCoverImageUrl
-                        ? playlist.playlistCoverImageUrl
-                        : "https://images.pexels.com/photos/3394651/pexels-photo-3394651.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1"
-                    }`}
-                  />
-                  <div className="text-white font-bold tracking-tight mt-3">
-                    {playlist.playlistName}
+                <NavLink to={`/playlist/${playlist.playlistId}`}>
+                  <div className="flex flex-col w-[11.6rem] h-[16rem] bg-[#181818] hover:bg-podcastHover cursor-pointer rounded-lg p-4">
+                    <img
+                      className="flex items-center justify-center p-1 rounded-lg"
+                      src={`${
+                        playlist.playlistCoverImageUrl
+                          ? playlist.playlistCoverImageUrl
+                          : "https://images.pexels.com/photos/3394651/pexels-photo-3394651.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1"
+                      }`}
+                    />
+                    <NavLink to={`/playlist/${playlist.playlistId}`}>
+                      <div className="text-white font-bold tracking-tight mt-3">
+                        {playlist.playlistName}
+                      </div>
+                    </NavLink>
+                    <div className="text-link font-semibold text-sm line-clamp-2 mt-2">
+                      {playlist.playlistSongs.length} şarkı
+                    </div>
                   </div>
-                  <div className="text-link font-semibold text-sm line-clamp-2 mt-2">
-                    {playlist.playlistSongs.length} şarkı
-                  </div>
-                </div>
+                </NavLink>
               ))}
             </div>
 
@@ -239,23 +246,25 @@ export default function Library() {
           <div className="w-full">
             <div className="text-white font-bold text-2xl my-5">Podcastler</div>
             <div className="flex flex-row flex-wrap gap-5 items-start justify-start">
-              <div className="flex flex-col gap-y-3 pt-14 items-start justify-center p-4 w-[24.4rem] h-[16rem] rounded-md bg-[#13745c]">
-                <p className="text-link text-sm font-semibold line-clamp-3">
-                  Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-                  Maecenas fringilla neque in dignissim euismod. Suspendisse
-                  tincidunt purus id sem viverra fringilla. Ut consectetur non
-                  magna ut aliquam. Duis commodo mi at nunc laoreet, quis
-                  vestibulum velit tristique. Aliquam gravida tortor nec
-                  condimentum fermentum.
-                </p>
-                <div className="text-[2rem] mt-4 text-white font-bold tracking-tight">
-                  Bölümlerin
+              <NavLink to="/episodes">
+                <div className="flex flex-col gap-y-3 pt-14 items-start justify-center p-4 w-[24.4rem] h-[16rem] rounded-md bg-[#13745c]">
+                  <p className="text-link text-sm font-semibold line-clamp-3">
+                    Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+                    Maecenas fringilla neque in dignissim euismod. Suspendisse
+                    tincidunt purus id sem viverra fringilla. Ut consectetur non
+                    magna ut aliquam. Duis commodo mi at nunc laoreet, quis
+                    vestibulum velit tristique. Aliquam gravida tortor nec
+                    condimentum fermentum.
+                  </p>
+                  <div className="text-[2rem] mt-4 text-white font-bold tracking-tight">
+                    Bölümlerin
+                  </div>
+                  <div className="text-white tracking-tight font-semibold">
+                    2 Bölüm
+                    {/* {episodes?.length} Bölüm */}
+                  </div>
                 </div>
-                <div className="text-white tracking-tight font-semibold">
-                  2 Bölüm
-                  {/* {episodes?.length} Bölüm */}
-                </div>
-              </div>
+              </NavLink>
 
               {podcasts.map((podcast) => (
                 <NavLink to={`/podcast-detail/${podcast.podcastId}`}>
@@ -269,9 +278,9 @@ export default function Library() {
                         {podcast.podcastName}
                       </div>
                     </NavLink>
-                      <div className="text-link font-semibold text-sm line-clamp-2 mt-2">
-                        {podcast.podcastPublisher}
-                      </div>
+                    <div className="text-link font-semibold text-sm line-clamp-2 mt-2">
+                      {podcast.podcastPublisher}
+                    </div>
                   </div>
                 </NavLink>
               ))}

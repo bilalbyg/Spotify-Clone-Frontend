@@ -17,7 +17,7 @@ export default function PodcastSectionItem({ item }) {
       <NavLink to={`/podcast-detail/${item.podcastId}`} className="text-white overflow-hidden overflow-ellipsis whitespace-nowrap font-semibold hover:underline">
         {item.podcastName}
       </NavLink>
-      <span className="hover:underline line-clamp-1 text-[rgb(167,167,167)] text-sm mt-1 font-semibold">
+      <span className="line-clamp-1 text-[rgb(167,167,167)] text-sm mt-1 font-semibold">
         {item.podcastPublisher}
       </span>
     </NavLink>

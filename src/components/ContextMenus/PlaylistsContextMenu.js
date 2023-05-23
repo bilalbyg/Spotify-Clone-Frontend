@@ -1,11 +1,15 @@
 import React, { useEffect, useState, useRef } from "react";
 import PlaylistService from "../../services/playlistService";
 
-export default function PlaylistsContextMenu({ playlistId }) {
+export default function PlaylistsContextMenu({ playlistId, closeContextMenu }) {
+
+  useEffect(() => {
+    console.log(closeContextMenu);
+  },[])
+
   const deletePlaylist = (playlistId) => {
     let playlistService = PlaylistService.getInstance();
     playlistService.delete(playlistId).then((res) => {
-      console.log(res.data);
     });
   };
 

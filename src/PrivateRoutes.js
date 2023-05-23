@@ -1,5 +1,4 @@
 import {  Navigate } from 'react-router-dom'
-import Content from './components/Content'
 import ApplicationContainer from './components/ApplicationContainer'
 
 const PrivateRoutes = () => {

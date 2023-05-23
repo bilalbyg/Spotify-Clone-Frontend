@@ -28,11 +28,21 @@ export default function Episodes() {
     let queryString = JSON.stringify(episodeIds);
     let toSendQueryString = queryString.substring(1, queryString.length - 1);
 
-    let episodeService = new EpisodeService();
+    let episodeService = EpisodeService.getInstance();
     episodeService
       .getEpisodesById(toSendQueryString)
       .then((result) => setEpisodes(result.data.data));
   }, [episodes]);
+
+  const deleteFromUserEpisodes = (episodeId) => {
+    let userEpisodeService = UserEpisodeService.getInstance();
+    userEpisodeService
+      .getByUserIdAndEpisodeId(userId, episodeId)
+      .then((res) => {
+        userEpisodeService
+          .delete(res.data.data.userEpisodeId)
+      });
+  };
 
   return (
     <main>
@@ -119,7 +129,7 @@ export default function Episodes() {
                       </div>
                     </div>
                     <div className="flex flex-row gap-x-4">
-                      <span className="text-primary">
+                      <span onClick={() => deleteFromUserEpisodes(episode.episodeId)} className="text-primary">
                         <Icon name="tick" />
                       </span>
                       <Popup

@@ -93,7 +93,7 @@ export default function Account() {
                     Kullanıcı Adı
                   </td>
                   <td className="text-white font-semibold w-[50%] py-5">
-                    Bilal
+                    JohnDoe
                   </td>
                 </tr>
                 <tr className="w-full">
@@ -101,7 +101,7 @@ export default function Account() {
                     E-posta
                   </td>
                   <td className="text-white font-semibold w-[50%] py-5">
-                    bilal@bilal.com
+                    john@doe.com
                   </td>
                 </tr>
                 <tr className="w-full">
