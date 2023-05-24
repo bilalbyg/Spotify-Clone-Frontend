@@ -2,7 +2,7 @@
 <br />
 <div align="center">
 
-  <h3 align="center">Spotiffy Clone Project's Frontend</h3>
+  <h3 align="center">Spotify Clone Project's Frontend</h3>
   <p align="center">
     React & Tailwind CSS
   </p>
