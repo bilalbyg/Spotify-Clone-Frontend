@@ -1,0 +1,44 @@
+[
+  {
+    "id": "kalt-podcast",
+    "type": "show",
+    "uri": "spotify:show:kalt-podcast",
+    "name": "KALT'ın Podcast'i",
+    "publisher": "KALT",
+    "description": "Ozan Akyol ve Erman Çağlar'ın karşılıklı konuşarak başardıkları podcast serisidir. Diğer podcast serimiz ise İşte Bu Bizim Hikayemiz'dir. Bu biterse onu da dinleyebilirsiniz.",
+    "languages": ["tr"],
+    "total_episodes": 5,
+    "images": [
+      {
+        "url": "https://picsum.photos/seed/kalt-podcast-cover/300/300",
+        "height": 300,
+        "width": 300
+      }
+    ],
+    "categories": ["Comedy"],
+    "rating": 4.9,
+    "rating_count": 2100,
+    "related_show_ids": ["tech-talks-podcast"]
+  },
+  {
+    "id": "tech-talks-podcast",
+    "type": "show",
+    "uri": "spotify:show:tech-talks-podcast",
+    "name": "Tech Talks",
+    "publisher": "Bilal Beygo",
+    "description": "Teknoloji dünyasının en güncel konularını tartıştığımız podcast serisi. Yazılımdan donanıma, yapay zekadan siber güvenliğe kadar geniş bir yelpazede konuşuyoruz.",
+    "languages": ["tr"],
+    "total_episodes": 3,
+    "images": [
+      {
+        "url": "https://picsum.photos/seed/tech-talks-cover/300/300",
+        "height": 300,
+        "width": 300
+      }
+    ],
+    "categories": ["Technology"],
+    "rating": 4.6,
+    "rating_count": 850,
+    "related_show_ids": ["kalt-podcast"]
+  }
+]

@@ -1,0 +1,36 @@
+[
+  {
+    "id": "b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e",
+    "type": "artist",
+    "uri": "spotify:artist:b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e",
+    "href": "https://api.spotify.com/v1/artists/b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e",
+    "name": "Nova Echoes",
+    "popularity": 82,
+    "followers": {
+      "href": null,
+      "total": 1245300
+    },
+    "monthly_listeners": 5218400,
+    "genres": ["turkish pop", "turkish rock", "acoustic pop"],
+    "images": [
+      {
+        "url": "https://picsum.photos/seed/artist-zeynep-1280/1280/720",
+        "height": 720,
+        "width": 1280
+      },
+      {
+        "url": "https://picsum.photos/seed/artist-zeynep-640/640/640",
+        "height": 640,
+        "width": 640
+      },
+      {
+        "url": "https://picsum.photos/seed/artist-zeynep-160/160/160",
+        "height": 160,
+        "width": 160
+      }
+    ],
+    "external_urls": {
+      "spotify": "https://open.spotify.com/artist/b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e"
+    }
+  }
+]

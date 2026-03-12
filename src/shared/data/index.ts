@@ -1,10 +1,23 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+import meta from './spotify-data.json';
+import users from './users.json';
+import artists from './artists.json';
+import albums from './albums.json';
+import tracks from './tracks.json';
+import playlists from './playlists.json';
+import categories from './categories.json';
+import podcasts from './podcasts.json';
+import episodes from './episodes.json';
+
 const spotifyData = {
-  tracks: [] as any[],
-  albums: [] as any[],
-  playlists: [] as any[],
-  artists: [] as any[],
-  users: [{ id: '1', display_name: 'User' }],
+  ...meta,
+  users,
+  artists,
+  albums,
+  tracks,
+  playlists,
+  categories,
+  podcasts,
+  episodes,
 };
 
 export default spotifyData;
