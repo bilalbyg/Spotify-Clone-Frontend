@@ -6,29 +6,36 @@
   html,
   body,
   #root {
-    @apply h-full bg-backdrop text-white antialiased;
+    height: 100%;
   }
 
-  #root {
-    @apply flex flex-col;
+  body {
+    @apply overflow-hidden bg-black text-zinc-100 antialiased;
+    font-family:
+      'Circular Std',
+      'Circular',
+      'Segoe UI',
+      system-ui,
+      -apple-system,
+      sans-serif;
   }
 
-  .wrapper {
-    height: calc(100% - theme("spacing.24"));
-    @apply flex;
-  }
-  .scrollable {
-    scroll-behavior: smooth;
-  }
-  /* Chrome, Safari, Edge, Opera */
-  input::-webkit-outer-spin-button,
-  input::-webkit-inner-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #3f3f46 transparent;
   }
 
-  /* Firefox */
-  input[type="number"] {
-    -moz-appearance: textfield;
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: #3f3f46;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: transparent;
   }
 }
