@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   useEffect,
   useMemo,
@@ -56,19 +55,17 @@ export function WorkspaceLayout({
 }: WorkspaceLayoutProps) {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
-  const createPlaylist = useLibraryStore((state: any) => state.createPlaylist);
-  const currentTrack = usePlayerStore((state: any) => state.currentTrack);
-  const isPlayerPlaying = usePlayerStore((state: any) => state.isPlaying);
-  const playerQueue = usePlayerStore((state: any) => state.queue);
-  const setTrack = usePlayerStore((state: any) => state.setTrack);
-  const setQueue = usePlayerStore((state: any) => state.setQueue);
-  const setPlaybackSource = usePlayerStore((state: any) => state.setPlaybackSource);
-  const setIsPlaying = usePlayerStore((state: any) => state.setIsPlaying);
-  const isRightPanelCollapsed = useLayoutUiStore((state: any) => state.isRightPanelCollapsed);
-  const toggleRightPanelCollapsed = useLayoutUiStore(
-    (state: any) => state.toggleRightPanelCollapsed,
-  );
-  const setPlayingModeIdle = useLayoutUiStore((state: any) => state.setPlayingModeIdle);
+  const createPlaylist = useLibraryStore((state) => state.createPlaylist);
+  const currentTrack = usePlayerStore((state) => state.currentTrack);
+  const isPlayerPlaying = usePlayerStore((state) => state.isPlaying);
+  const playerQueue = usePlayerStore((state) => state.queue);
+  const setTrack = usePlayerStore((state) => state.setTrack);
+  const setQueue = usePlayerStore((state) => state.setQueue);
+  const setPlaybackSource = usePlayerStore((state) => state.setPlaybackSource);
+  const setIsPlaying = usePlayerStore((state) => state.setIsPlaying);
+  const isRightPanelCollapsed = useLayoutUiStore((state) => state.isRightPanelCollapsed);
+  const toggleRightPanelCollapsed = useLayoutUiStore((state) => state.toggleRightPanelCollapsed);
+  const setPlayingModeIdle = useLayoutUiStore((state) => state.setPlayingModeIdle);
   const [libraryFilter, setLibraryFilter] = useState<WorkspaceLibraryItem['type'] | 'all'>('all');
   const [isLibrarySearchOpen, setIsLibrarySearchOpen] = useState(false);
   const [librarySearchQuery, setLibrarySearchQuery] = useState('');
@@ -257,7 +254,7 @@ export function WorkspaceLayout({
     setLibraryFilter((prev) => (prev === filterType ? 'all' : filterType));
   };
 
-  const playbackContext = usePlayerStore((state: any) => state.playbackContext);
+  const playbackContext = usePlayerStore((state) => state.playbackContext);
 
   const rightPanelQueue = useMemo(() => playerQueue.slice(0, 6), [playerQueue]);
   const isLibraryItemNowPlaying = (item: WorkspaceLibraryItem) => {
@@ -394,12 +391,10 @@ export function WorkspaceLayout({
     });
     setQueue(entityQueue);
     setPlaybackSource('external');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     usePlayerStore
       .getState()
-      .setPlaybackContext({
-        type: playbackContextType as unknown as string,
-        id: playbackContextId,
-      });
+      .setPlaybackContext({ type: playbackContextType as any, id: playbackContextId });
     setIsPlaying(true);
     navigate(item.route);
   };
