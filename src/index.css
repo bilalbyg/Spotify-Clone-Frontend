@@ -1,0 +1,41 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    @apply overflow-hidden bg-black text-zinc-100 antialiased;
+    font-family:
+      'Circular Std',
+      'Circular',
+      'Segoe UI',
+      system-ui,
+      -apple-system,
+      sans-serif;
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #3f3f46 transparent;
+  }
+
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: #3f3f46;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}
