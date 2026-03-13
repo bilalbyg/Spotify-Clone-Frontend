@@ -1,5 +1,7 @@
-const SettingsPage = () => {
-  return <div>Settings Page</div>;
-};
+import { SettingsView } from '@/features/settings';
+
+function SettingsPage() {
+  return <SettingsView />;
+}
 
 export default SettingsPage;

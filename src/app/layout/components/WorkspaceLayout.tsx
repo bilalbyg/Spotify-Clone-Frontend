@@ -20,7 +20,7 @@ type WorkspaceLibraryItem = {
   id: string;
   title: string;
   meta: string;
-  type: string;
+  type: 'playlist' | 'artist' | 'album' | 'podcast';
   palette: string;
   image?: string | string[];
   route: string;
@@ -391,10 +391,10 @@ export function WorkspaceLayout({
     });
     setQueue(entityQueue);
     setPlaybackSource('external');
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    usePlayerStore
-      .getState()
-      .setPlaybackContext({ type: playbackContextType as any, id: playbackContextId });
+    usePlayerStore.getState().setPlaybackContext({
+      type: playbackContextType as 'artist' | 'album' | 'playlist',
+      id: playbackContextId,
+    });
     setIsPlaying(true);
     navigate(item.route);
   };
