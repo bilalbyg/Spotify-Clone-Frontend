@@ -1,11 +1,23 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import spotifyData from '@/shared/data';
-import albumsJson from '@/features/album/data/albums.json';
+// import albumsJson from '@/features/album/data/albums.json';
+const albumsJson = { albums: [] };
 import { resolveLocale } from '@/helpers/i18n';
 import { NowPlayingEqualizer } from '@/shared/components/NowPlayingEqualizer';
 import { usePlayerStore } from '@/store/playerStore';
+
+// TEMPORARY: Empty data object to prevent crashes until backend integration is complete.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const spotifyData = {
+  tracks: [],
+  albums: [],
+  artists: [],
+  playlists: [],
+  users: [],
+  episodes: [],
+  podcasts: [],
+} as any;
 
 type Artist = {
   id: string;

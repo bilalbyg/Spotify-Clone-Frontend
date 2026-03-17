@@ -21,8 +21,19 @@ import { useTranslation } from 'react-i18next';
 import { usePlayerStore } from '@/store/playerStore';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useToastStore } from '@/store/toastStore';
-import spotifyData from '@/shared/data';
 import './PlayerBar.css';
+
+// TEMPORARY: Empty data object to prevent crashes until backend integration is complete.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const spotifyData = {
+  tracks: [],
+  albums: [],
+  artists: [],
+  playlists: [],
+  users: [],
+  episodes: [],
+  podcasts: [],
+} as any;
 
 type PlayerTrack = {
   id: string;

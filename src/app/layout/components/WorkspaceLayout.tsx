@@ -13,8 +13,19 @@ import { useLayoutUiStore } from '@/store/layoutUiStore';
 import { usePlayerStore } from '@/store/playerStore';
 import { NowPlayingEqualizer } from '@/shared/components/NowPlayingEqualizer';
 import { ContextMenu } from './ContextMenu';
-import spotifyData from '@/shared/data';
 import { useLibraryStore } from '@/store/libraryStore';
+
+// TEMPORARY: Empty data object to prevent crashes until backend integration is complete.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const spotifyData = {
+  tracks: [],
+  albums: [],
+  artists: [],
+  playlists: [],
+  users: [],
+  episodes: [],
+  podcasts: [],
+} as any;
 
 type WorkspaceLibraryItem = {
   id: string;

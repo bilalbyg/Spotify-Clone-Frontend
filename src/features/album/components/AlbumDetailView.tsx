@@ -4,7 +4,7 @@ import { NowPlayingEqualizer } from '@/shared/components/NowPlayingEqualizer';
 import { usePlayerStore } from '@/store/playerStore';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useToastStore } from '@/store/toastStore';
-import albumsJson from '@/shared/data/albums.json';
+const albumsJson = { albums: [] };
 
 type SpotifyExternalUrls = {
   spotify: string;

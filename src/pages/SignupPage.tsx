@@ -1,9 +1,15 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Eye, EyeOff, ChevronLeft } from 'lucide-react';
+import api from '@/lib/axios';
+import { useAuthStore } from '@/store/useAuthStore';
 
 function SignupPage() {
+  const navigate = useNavigate();
+  const register = useAuthStore((state) => state.register);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const { t } = useTranslation();
   const [step, setStep] = useState(0); // 0 = email, 1 = password, 2 = about you, 3 = terms
   const [email, setEmail] = useState('');
@@ -22,6 +28,31 @@ function SignupPage() {
   const hasMinLength = password.length >= 10;
 
   const totalSteps = 3;
+
+  const handleSignup = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      // Send user data based on standard auth requirements
+      const response = await api.post('/auth/register', {
+        username: displayName || email.split('@')[0], // Fallback if no display name
+        email,
+        password,
+      });
+      // Optionally login automatically after register depending on Spring Boot response.
+      // Usually Spring returns 201 Created and maybe token/user data.
+      if (response.data && response.data.token) {
+        register(response.data.user || { email }, response.data.token);
+      }
+      navigate('/login');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (err: any) {
+      console.error(err);
+      setError(err.response?.data?.message || err.message || 'Registration failed');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleNext = () => {
     if (step < 3) setStep(step + 1);
@@ -490,12 +521,18 @@ function SignupPage() {
                 </p>
               </div>
 
-              <Link
-                to="/signin"
-                className="block w-full mt-2 rounded-full bg-[#1ed760] py-3 text-base font-bold text-black text-center transition hover:bg-[#1fdf64] hover:scale-[1.02] active:scale-100"
+              {error && (
+                <div className="w-full mt-4 p-3 rounded bg-red-500/20 text-red-500 text-sm text-center border border-red-500/50">
+                  {error}
+                </div>
+              )}
+              <button
+                onClick={handleSignup}
+                disabled={loading}
+                className="block w-full mt-2 rounded-full bg-[#1ed760] py-3 text-base font-bold text-black text-center transition hover:bg-[#1fdf64] hover:scale-[1.02] active:scale-100 disabled:opacity-50"
               >
-                {t('auth.signup.signUp')}
-              </Link>
+                {loading ? '...' : t('auth.signup.signUp')}
+              </button>
             </div>
           )}
         </div>

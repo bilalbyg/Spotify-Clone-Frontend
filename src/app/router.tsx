@@ -12,67 +12,79 @@ import SearchPage from '@/pages/SearchPage';
 import SettingsPage from '@/pages/SettingsPage';
 import TrackPage from '@/pages/TrackPage';
 import EpisodePage from '@/pages/EpisodePage';
+import { ProtectedRoute, PublicRoute } from '@/components/ProtectedRoute';
 
 export const router = createBrowserRouter([
   {
-    path: '/login',
-    element: <LoginPage />,
-  },
-  {
-    path: '/signin',
-    element: <LoginPage />,
-  },
-  {
-    path: '/signup',
-    element: <SignupPage />,
+    element: <PublicRoute />,
+    children: [
+      {
+        path: '/login',
+        element: <LoginPage />,
+      },
+      {
+        path: '/signin',
+        element: <LoginPage />,
+      },
+      {
+        path: '/signup',
+        element: <SignupPage />,
+      },
+    ],
   },
   {
     path: '/',
-    element: <AppLayout />,
+    element: <ProtectedRoute />,
     children: [
       {
-        index: true,
-        element: <Navigate replace to="/home" />,
-      },
-      {
-        path: 'home',
-        element: <HomePage />,
-      },
-      {
-        path: 'playlist/:id',
-        element: <PlaylistPage />,
-      },
-      {
-        path: 'album/:id',
-        element: <AlbumPage />,
-      },
-      {
-        path: 'artist/:id',
-        element: <ArtistPage />,
-      },
-      {
-        path: 'show/:id',
-        element: <PodcastPage />,
-      },
-      {
-        path: 'track/:id',
-        element: <TrackPage />,
-      },
-      {
-        path: 'episode/:id',
-        element: <EpisodePage />,
-      },
-      {
-        path: 'user/:id',
-        element: <ProfilePage />,
-      },
-      {
-        path: 'preferences',
-        element: <SettingsPage />,
-      },
-      {
-        path: 'search',
-        element: <SearchPage />,
+        path: '/',
+        element: <AppLayout />,
+        children: [
+          {
+            index: true,
+            element: <Navigate replace to="/home" />,
+          },
+          {
+            path: 'home',
+            element: <HomePage />,
+          },
+          {
+            path: 'playlist/:id',
+            element: <PlaylistPage />,
+          },
+          {
+            path: 'album/:id',
+            element: <AlbumPage />,
+          },
+          {
+            path: 'artist/:id',
+            element: <ArtistPage />,
+          },
+          {
+            path: 'show/:id',
+            element: <PodcastPage />,
+          },
+          {
+            path: 'track/:id',
+            element: <TrackPage />,
+          },
+          {
+            path: 'episode/:id',
+            element: <EpisodePage />,
+          },
+          {
+            path: 'user/:id',
+            element: <ProfilePage />,
+          },
+          {
+            path: 'preferences',
+            element: <SettingsPage />,
+          },
+          {
+            path: 'search',
+            element: <SearchPage />,
+          },
+        ],
       },
     ],
   },

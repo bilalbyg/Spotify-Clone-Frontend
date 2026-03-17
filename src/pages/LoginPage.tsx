@@ -1,8 +1,46 @@
-import { Link } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import api from '@/lib/axios';
+import { useAuthStore } from '@/store/useAuthStore';
 
 function LoginPage() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const login = useAuthStore((state) => state.login);
+
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !password) return;
+
+    setLoading(true);
+    setError('');
+    try {
+      const response = await api.post('/auth/login', { email, password });
+      const { token, username, email: responseEmail } = response.data;
+
+      const loggedUser = {
+        id: 'me', // Default ID for correct routing
+        email: responseEmail || email,
+        username: username,
+        name: username, // Fallback name to username
+      };
+
+      login(loggedUser, token);
+      navigate(`/user/me`);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (err: any) {
+      console.error(err);
+      setError(err.response?.data?.message || err.message || 'Login failed');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-[#1a1a2e] to-[#0a0a0a] flex flex-col">
@@ -21,22 +59,53 @@ function LoginPage() {
             {t('auth.login.welcomeBack')}
           </h1>
 
-          {/* Email input */}
-          <div className="w-full mb-4">
-            <label className="block text-sm font-semibold text-white mb-2">
-              {t('auth.login.emailOrUsername')}
-            </label>
-            <input
-              type="text"
-              className="w-full rounded-[4px] border border-zinc-600 bg-transparent px-3.5 py-3 text-sm text-white outline-none transition focus:border-white placeholder:text-zinc-500"
-              placeholder={t('auth.login.emailOrUsername')}
-            />
-          </div>
+          <form onSubmit={handleLogin} className="w-full flex flex-col items-center">
+            {/* Error message */}
+            {error && (
+              <div className="w-full mb-4 p-3 rounded bg-red-500/20 text-red-500 text-sm text-center border border-red-500/50">
+                {error}
+              </div>
+            )}
 
-          {/* Continue button */}
-          <button className="w-full rounded-full bg-[#1ed760] py-3 text-base font-bold text-black transition hover:bg-[#1fdf64] hover:scale-[1.02] active:scale-100">
-            {t('auth.login.continue')}
-          </button>
+            {/* Email input */}
+            <div className="w-full mb-4">
+              <label className="block text-sm font-semibold text-white mb-2">
+                {t('auth.login.emailOrUsername')}
+              </label>
+              <input
+                type="text"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full rounded-[4px] border border-zinc-600 bg-transparent px-3.5 py-3 text-sm text-white outline-none transition focus:border-white placeholder:text-zinc-500"
+                placeholder={t('auth.login.emailOrUsername')}
+                required
+              />
+            </div>
+
+            {/* Password input */}
+            <div className="w-full mb-6">
+              <label className="block text-sm font-semibold text-white mb-2">
+                {t('auth.login.password', 'Password')}
+              </label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full rounded-[4px] border border-zinc-600 bg-transparent px-3.5 py-3 text-sm text-white outline-none transition focus:border-white placeholder:text-zinc-500"
+                placeholder={t('auth.login.password', 'Password')}
+                required
+              />
+            </div>
+
+            {/* Continue button */}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full rounded-full bg-[#1ed760] py-3 text-base font-bold text-black transition hover:bg-[#1fdf64] hover:scale-[1.02] active:scale-100 disabled:opacity-50"
+            >
+              {loading ? '...' : t('auth.login.continue')}
+            </button>
+          </form>
 
           {/* Divider */}
           <div className="w-full flex items-center my-6">

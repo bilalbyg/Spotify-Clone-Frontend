@@ -12,10 +12,22 @@ import { useTranslation } from 'react-i18next';
 import { NavLink } from 'react-router-dom';
 import { getLibraryItemRoute } from '@/helpers/helper';
 import { NowPlayingEqualizer } from '@/shared/components/NowPlayingEqualizer';
-import spotifyData from '@/shared/data';
 import { usePlayerStore } from '@/store/playerStore';
+import { useAuthStore } from '@/store/useAuthStore';
 import { libraryItems } from '@/utils/utils';
 import type { LibraryItem } from '@/app/layout/types/app-layout.types';
+
+// TEMPORARY: Empty data object to prevent crashes until backend integration is complete.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const spotifyData = {
+  tracks: [],
+  albums: [],
+  artists: [],
+  playlists: [],
+  users: [],
+  episodes: [],
+  podcasts: [],
+} as any;
 
 type HomeShelfCard = {
   id: string;
@@ -31,6 +43,7 @@ type HomeShelfCard = {
 };
 
 const madeForCards: HomeShelfCard[] = [
+  /*
   {
     id: 'nova-echoes-mix',
     title: 'Nova Echoes Mix',
@@ -40,9 +53,11 @@ const madeForCards: HomeShelfCard[] = [
     to: '/playlist/liked-songs',
     artistHint: 'Nova Echoes',
   },
+*/
 ];
 
 const jumpBackInCards: HomeShelfCard[] = [
+  /*
   {
     id: 'jump-midnight-frequencies',
     title: 'Midnight Frequencies',
@@ -51,9 +66,11 @@ const jumpBackInCards: HomeShelfCard[] = [
     to: '/album/c3d4e5f6-a7b8-4c9d-0e1f-2a3b4c5d6e7f',
     artistHint: 'Nova Echoes',
   },
+*/
 ];
 
 const recentlyPlayedCards: HomeShelfCard[] = [
+  /*
   {
     id: 'recent-nova-echoes',
     title: 'Nova Echoes',
@@ -71,9 +88,11 @@ const recentlyPlayedCards: HomeShelfCard[] = [
     to: '/playlist/liked-songs',
     artistHint: 'Nova Echoes',
   },
+*/
 ];
 
 const topMixCards: HomeShelfCard[] = [
+  /*
   {
     id: 'top-nova-echoes-mix',
     title: 'Nova Echoes Mix',
@@ -84,9 +103,11 @@ const topMixCards: HomeShelfCard[] = [
     to: '/playlist/liked-songs',
     artistHint: 'Nova Echoes',
   },
+*/
 ];
 
 const favoriteArtistCards: HomeShelfCard[] = [
+  /*
   {
     id: 'fav-nova-echoes',
     title: 'Nova Echoes',
@@ -96,9 +117,11 @@ const favoriteArtistCards: HomeShelfCard[] = [
     shape: 'circle',
     artistHint: 'Nova Echoes',
   },
+*/
 ];
 
 const moreLikeLvbelCards: HomeShelfCard[] = [
+  /*
   {
     id: 'more-like-nova-1',
     title: 'Nova Echoes Radio',
@@ -108,9 +131,11 @@ const moreLikeLvbelCards: HomeShelfCard[] = [
     topTag: 'RADIO',
     artistHint: 'Nova Echoes',
   },
+*/
 ];
 
 const recommendedStationCards: HomeShelfCard[] = [
+  /*
   {
     id: 'recommended-nova-echoes',
     title: 'Nova Echoes',
@@ -120,11 +145,13 @@ const recommendedStationCards: HomeShelfCard[] = [
     topTag: 'RADIO',
     artistHint: 'Nova Echoes',
   },
+*/
 ];
 
 const episodesYouMightLikeCards: HomeShelfCard[] = [];
 
 const popularRadioCards: HomeShelfCard[] = [
+  /*
   {
     id: 'popular-nova-echoes',
     title: 'Nova Echoes',
@@ -134,9 +161,11 @@ const popularRadioCards: HomeShelfCard[] = [
     topTag: 'RADIO',
     artistHint: 'Nova Echoes',
   },
+*/
 ];
 
 const yourPlaylistCards: HomeShelfCard[] = [
+  /*
   {
     id: 'your-playlist-liked',
     title: 'Liked Songs',
@@ -144,6 +173,7 @@ const yourPlaylistCards: HomeShelfCard[] = [
     image: 'https://picsum.photos/seed/liked-songs-cover/640/640',
     to: '/playlist/liked-songs',
   },
+*/
 ];
 
 type HomeVideoRadioCard = {
@@ -160,6 +190,7 @@ type HomeVideoRadioCard = {
 };
 
 const videoRadioCards: HomeVideoRadioCard[] = [
+  /*
   {
     id: 'video-nova-echoes',
     title: 'Nova Echoes Radio',
@@ -172,6 +203,7 @@ const videoRadioCards: HomeVideoRadioCard[] = [
     tileTitle: 'Nova Echoes',
     artistHint: 'Nova Echoes',
   },
+*/
 ];
 
 const homeFooterColumns = [
@@ -379,6 +411,8 @@ const CarouselEdgeControls = ({
 
 function HomePage() {
   const { t } = useTranslation();
+  const authUser = useAuthStore((state) => state.user);
+  const userName = authUser?.name || authUser?.username || 'User';
   const [activeFilter, setActiveFilter] = useState<'all' | 'music' | 'podcasts'>('all');
   const madeForCarousel = useCarouselControls();
   const jumpBackInCarousel = useCarouselControls();
@@ -765,7 +799,7 @@ function HomePage() {
         <div className="mb-4 flex items-end justify-between">
           <div>
             <p className="text-xs font-medium text-zinc-300">{t('homePage.sections.madeFor')}</p>
-            <h3 className="text-2xl font-black leading-none tracking-tight">Emre Kaya</h3>
+            <h3 className="text-2xl font-black leading-none tracking-tight">{userName}</h3>
           </div>
           <button className="text-sm font-semibold text-zinc-300 transition hover:text-zinc-100">
             {t('common.actions.showAll')}
@@ -1511,7 +1545,9 @@ function HomePage() {
                   >
                     {card.title}
                   </p>
-                  <p className="mt-1 line-clamp-1 text-sm text-zinc-400">{card.subtitle}</p>
+                  <p className="mt-1 line-clamp-1 text-sm text-zinc-400">
+                    {card.subtitle.replace('Emre Kaya', userName)}
+                  </p>
                 </NavLink>
               );
             })}
