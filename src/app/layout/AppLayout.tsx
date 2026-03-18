@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router-dom';
@@ -20,8 +21,7 @@ import { useLayoutUiStore } from '@/store/layoutUiStore';
 import { useLibraryStore } from '@/store/libraryStore';
 import { usePlayerStore } from '@/store/playerStore';
 // import spotifyData from '@/shared/data';
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const spotifyData = {
+const spotifyData: any = {
   tracks: [],
   albums: [],
   artists: [],
@@ -29,7 +29,7 @@ const spotifyData = {
   users: [{ id: '1', display_name: 'User' }],
   episodes: [],
   podcasts: [],
-} as any;
+};
 import { GlobalToast } from '@/shared/components/GlobalToast';
 
 function AppLayout() {

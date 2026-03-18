@@ -1,10 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { resolveLocale } from '@/helpers/i18n';
 
 // TEMPORARY: Empty data object to prevent crashes until backend integration is complete.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const spotifyData = {
+const spotifyData: any = {
   tracks: [],
   albums: [],
   artists: [],
@@ -12,7 +12,7 @@ const spotifyData = {
   users: [],
   episodes: [],
   podcasts: [],
-} as any;
+};
 
 type SpotifyImage = {
   url: string;

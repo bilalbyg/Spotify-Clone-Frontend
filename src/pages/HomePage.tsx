@@ -1,4 +1,6 @@
-/* eslint-disable react-hooks/refs, react-hooks/set-state-in-effect */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable react-hooks/set-state-in-effect */
 import {
   useCallback,
   useEffect,
@@ -16,10 +18,10 @@ import { usePlayerStore } from '@/store/playerStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { libraryItems } from '@/utils/utils';
 import type { LibraryItem } from '@/app/layout/types/app-layout.types';
+import api from '@/lib/axios';
 
 // TEMPORARY: Empty data object to prevent crashes until backend integration is complete.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const spotifyData = {
+const spotifyData: any = {
   tracks: [],
   albums: [],
   artists: [],
@@ -27,7 +29,7 @@ const spotifyData = {
   users: [],
   episodes: [],
   podcasts: [],
-} as any;
+};
 
 type HomeShelfCard = {
   id: string;
@@ -41,20 +43,6 @@ type HomeShelfCard = {
   shape?: 'square' | 'circle';
   artistHint?: string;
 };
-
-const madeForCards: HomeShelfCard[] = [
-  /*
-  {
-    id: 'nova-echoes-mix',
-    title: 'Nova Echoes Mix',
-    subtitle: 'Nova Echoes, Velvet Horizon and more.',
-    image: 'https://picsum.photos/seed/home-nova-mix-01/640/640',
-    badge: 'Daily Mix 01',
-    to: '/playlist/liked-songs',
-    artistHint: 'Nova Echoes',
-  },
-*/
-];
 
 const jumpBackInCards: HomeShelfCard[] = [
   /*
@@ -432,6 +420,33 @@ function HomePage() {
   const togglePlay = usePlayerStore((state) => state.togglePlay);
   const setPlaybackSource = usePlayerStore((state) => state.setPlaybackSource);
   const setPlaybackContext = usePlayerStore((state) => state.setPlaybackContext);
+  const [madeForCards, setMadeForCards] = useState<HomeShelfCard[]>([]);
+  const [isArtistsLoading, setIsArtistsLoading] = useState(true);
+  const [artistsError, setArtistsError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setIsArtistsLoading(true);
+    setArtistsError(null);
+    api.get('/artists')
+      .then((res: any) => {
+        const formatted = (res.data || []).map((artist: any) => ({
+          id: `artist-${artist.id}`,
+          title: artist.name,
+          subtitle: artist.bio || (artist.genres?.length ? artist.genres[0] : 'Artist'),
+          image: artist.imageUrl || artist.picture || artist.images?.[0]?.url || `https://ui-avatars.com/api/?name=${encodeURIComponent(artist.name)}&background=random`,
+          to: `/artist/${artist.id}`,
+          shape: 'circle',
+        }));
+        setMadeForCards(formatted);
+      })
+      .catch((err: any) => {
+        console.error('Failed to fetch artists:', err);
+        setArtistsError('Failed to load artists.');
+      })
+      .finally(() => {
+        setIsArtistsLoading(false);
+      });
+  }, []);
 
   const filteredLibraryItems: LibraryItem[] = useMemo(
     () =>
@@ -815,7 +830,20 @@ function HomePage() {
             ref={madeForCarousel.scrollerRef}
             className="flex gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
-            {madeForCards.map((card) => {
+            {isArtistsLoading ? (
+              <div className="flex w-full items-center justify-center py-10 text-zinc-400">
+                <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-500 border-t-emerald-500" />
+              </div>
+            ) : artistsError ? (
+              <div className="flex w-full items-center justify-center py-10 text-zinc-400">
+                {artistsError}
+              </div>
+            ) : madeForCards.length === 0 ? (
+              <div className="flex w-full items-center justify-center py-10 text-zinc-400" id="artist-check">
+                No artists found.
+              </div>
+            ) : (
+              madeForCards.map((card) => {
               const isNowPlayingCard = isShelfCardNowPlaying(card);
 
               return (
@@ -866,7 +894,8 @@ function HomePage() {
                   <p className="mt-1 line-clamp-2 text-sm text-zinc-400">{card.subtitle}</p>
                 </NavLink>
               );
-            })}
+              })
+            )}
           </div>
 
           <CarouselEdgeControls controls={madeForCarousel} t={t} />

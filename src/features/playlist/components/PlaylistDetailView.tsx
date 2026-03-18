@@ -1,4 +1,5 @@
-/* eslint-disable */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
@@ -10,7 +11,7 @@ import { NowPlayingEqualizer } from '@/shared/components/NowPlayingEqualizer';
 import { useAuthStore } from '@/store/useAuthStore';
 
 // TEMPORARY: Empty data object to prevent crashes until backend integration is complete.
-const spotifyData = {
+const spotifyData: any = {
   tracks: [],
   albums: [],
   artists: [],
@@ -18,7 +19,7 @@ const spotifyData = {
   users: [],
   episodes: [],
   podcasts: [],
-} as any;
+};
 
 type Track = {
   id: string;
@@ -90,11 +91,11 @@ type PlaylistDetailViewProps = {
 };
 
 function resolveTrackInfo(id: string): Track {
-  const originalTrack = spotifyData.tracks.find((t) => t.id === id);
-  const album = spotifyData.albums.find((a) => a.id === originalTrack?.album_id);
+  const originalTrack = spotifyData.tracks.find((t: any) => t.id === id);
+  const album = spotifyData.albums.find((a: any) => a.id === originalTrack?.album_id);
   const artists =
     originalTrack?.artist_ids
-      .map((aId) => spotifyData.artists.find((a) => a.id === aId)?.name)
+      .map((aId: any) => spotifyData.artists.find((a: any) => a.id === aId)?.name)
       .join(', ') || '';
 
   if (!originalTrack) {
@@ -154,10 +155,10 @@ function PlaylistDetailView({ playlistId }: PlaylistDetailViewProps) {
   const key = playlistId?.toLowerCase() ?? '';
   let selectedPlaylist = playlists[key];
 
-  const spotifyDataPlaylist = spotifyData.playlists.find((p) => p.id === playlistId);
+  const spotifyDataPlaylist = spotifyData.playlists.find((p: any) => p.id === playlistId);
 
   if (!selectedPlaylist && spotifyDataPlaylist) {
-    const owner = spotifyData.users.find((u) => u.id === spotifyDataPlaylist.owner_id);
+    const owner = spotifyData.users.find((u: any) => u.id === spotifyDataPlaylist.owner_id);
     const resolvedTracks = spotifyDataPlaylist.track_ids.map(resolveTrackInfo);
 
     selectedPlaylist = {
@@ -166,15 +167,15 @@ function PlaylistDetailView({ playlistId }: PlaylistDetailViewProps) {
       owner: owner?.display_name || 'Spotify',
       trackCount: resolvedTracks.length,
       durationLabel: `${Math.round(
-        resolvedTracks.reduce((acc, t) => {
-          const ms = spotifyData.tracks.find((x) => x.id === t.id)?.duration_ms || 213000;
+        resolvedTracks.reduce((acc: any, t: any) => {
+          const ms = spotifyData.tracks.find((x: any) => x.id === t.id)?.duration_ms || 213000;
           return acc + ms;
         }, 0) / 60000,
       )} min`,
       year: '2020',
       description: spotifyDataPlaylist.description || '',
       palette: 'from-[#8e291e] via-red-900 to-black', // Sample fallback style
-      coverTiles: spotifyDataPlaylist.images.map((img) => img.url),
+      coverTiles: spotifyDataPlaylist.images.map((img: any) => img.url),
       tracks: resolvedTracks,
     };
   }
@@ -238,14 +239,14 @@ function PlaylistDetailView({ playlistId }: PlaylistDetailViewProps) {
     const query = searchTerm.toLowerCase();
 
     return spotifyData.tracks
-      .filter((t) => t.name.toLowerCase().includes(query))
-      .filter((t) => !playlist.tracks.some((pt) => pt.id === t.id))
-      .map((t) => resolveTrackInfo(t.id))
+      .filter((t: any) => t.name.toLowerCase().includes(query))
+      .filter((t: any) => !playlist.tracks.some((pt: any) => pt.id === t.id))
+      .map((t: any) => resolveTrackInfo(t.id))
       .slice(0, 5);
   }, [searchTerm, playlist.tracks]);
 
   const playlistQueue = useMemo(() => {
-    return playlist.tracks.map((track) => ({
+    return playlist.tracks.map((track: any) => ({
       id: track.id,
       title: track.title,
       artist: track.artist,
@@ -650,7 +651,7 @@ function PlaylistDetailView({ playlistId }: PlaylistDetailViewProps) {
             {searchTerm && (
               <div className="space-y-1">
                 {}
-                {searchResults.map((track) => (
+                {searchResults.map((track: any) => (
                   <div
                     key={track.id}
                     className="group flex items-center justify-between p-2 hover:bg-zinc-800/60 rounded-md transition"
