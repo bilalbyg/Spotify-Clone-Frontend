@@ -93,6 +93,7 @@ const en = {
       recommendedStations: 'Recommended Stations',
       episodesYouMightLike: 'Episodes you might like',
       popularRadio: 'Popular radio',
+      popularAlbums: 'Popular Albums',
       yourPlaylists: 'Your playlists',
       nonStopHint: 'Non-stop music based on your favorite songs and artists.',
     },

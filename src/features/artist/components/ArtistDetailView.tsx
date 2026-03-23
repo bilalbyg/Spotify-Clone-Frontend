@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import api from '@/lib/axios';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 // import albumsJson from '@/features/album/data/albums.json';
@@ -157,29 +158,66 @@ function ArtistDetailView({ artistId }: ArtistDetailViewProps) {
   const isPlaying = usePlayerStore((state) => state.isPlaying);
   const playbackSource = usePlayerStore((state) => state.playbackSource);
 
-  const selectedArtist = data.artists.find((artist) => artist.id === artistId);
-  const artist = selectedArtist ?? data.artists[0];
-  const notFound = !selectedArtist;
+  const [artist, setArtist] = useState<any>(null);
+  const [artistAlbums, setArtistAlbums] = useState<any[]>([]);
+  const [currentArtistTracks, setCurrentArtistTracks] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (!artistId) return;
+
+    setIsLoading(true);
+    // Fetch artist details
+    api.get(`/artists/${artistId}`)
+      .then(res => setArtist(res.data))
+      .catch(err => console.error('Failed to fetch artist:', err))
+      .finally(() => setIsLoading(false));
+
+    // Fetch artist albums
+    api.get(`/albums/artist/${artistId}`)
+      .then(res => {
+        const formattedAlbums = (res.data || []).map((album: any) => ({
+          id: album.id,
+          name: album.title,
+          album_type: 'album',
+          release_date: `${album.releaseYear}-01-01`,
+          total_tracks: 0,
+          images: album.coverImageUrl ? [{ url: album.coverImageUrl }] : [],
+          artist_ids: [album.artistId]
+        }));
+        setArtistAlbums(formattedAlbums);
+      })
+      .catch(err => console.error('Failed to fetch artist albums:', err));
+
+    // For now tracks are still empty
+    setCurrentArtistTracks([]);
+  }, [artistId]);
+
+  const notFound = !artist && !isLoading;
+
+  if (isLoading || !artist) {
+    return (
+      <div className="flex h-full items-center justify-center py-20">
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-zinc-800 border-t-emerald-500" />
+      </div>
+    );
+  }
 
   /* All artist tracks sorted by popularity descending */
-  const artistTracks = data.tracks
+  const artistTracks = currentArtistTracks.length > 0 ? currentArtistTracks : data.tracks
     .filter((track) => track.artist_ids.includes(artist.id))
     .sort((a, b) => b.popularity - a.popularity);
 
   const visibleTracks = showAll ? artistTracks : artistTracks.slice(0, 5);
 
-  const artistAlbums = data.albums
-    .filter((album) => album.artist_ids.includes(artist.id))
-    .sort((a, b) => b.release_date.localeCompare(a.release_date));
-
   const discoveredOn = data.playlists
     .filter((playlist) =>
-      playlist.track_ids.some((trackId) => artistTracks.some((track) => track.id === trackId)),
+      playlist.track_ids.some((trackId) => artistTracks.some((track: any) => track.id === trackId)),
     )
     .slice(0, 4);
 
-  const artistImage = artist.images[0];
-  const genres = artist.genres.slice(0, 3).join(' • ');
+  const artistImage = artist.imageUrl || artist.picture || (artist.images && artist.images.length > 0 ? artist.images[0] : null);
+  const genres = artist.genres ? artist.genres.slice(0, 3).join(' • ') : '';
 
   /* Helper: resolve album cover for a track */
   const getTrackCover = (track: Track) => {
@@ -189,7 +227,7 @@ function ArtistDetailView({ artistId }: ArtistDetailViewProps) {
 
     /* Fallback: spotify-data album images */
     const album = data.albums.find((a) => a.id === track.album_id);
-    return album?.images[0]?.url ?? artistImage?.url ?? '';
+    return album?.images[0]?.url ?? (artistImage?.url || '') ?? '';
   };
 
   /* Helper: resolve preview_url */
@@ -199,7 +237,7 @@ function ArtistDetailView({ artistId }: ArtistDetailViewProps) {
   };
 
   /* Build queue from all artist tracks (sorted by popularity) */
-  const artistQueue = artistTracks.map((track) => ({
+  const artistQueue = artistTracks.map((track: any) => ({
     id: track.id,
     title: track.name,
     artist: artist.name,

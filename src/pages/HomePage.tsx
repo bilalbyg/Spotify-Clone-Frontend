@@ -403,6 +403,7 @@ function HomePage() {
   const userName = authUser?.name || authUser?.username || 'User';
   const [activeFilter, setActiveFilter] = useState<'all' | 'music' | 'podcasts'>('all');
   const madeForCarousel = useCarouselControls();
+  const albumsCarousel = useCarouselControls();
   const jumpBackInCarousel = useCarouselControls();
   const recentlyPlayedCarousel = useCarouselControls();
   const topMixesCarousel = useCarouselControls();
@@ -421,21 +422,28 @@ function HomePage() {
   const setPlaybackSource = usePlayerStore((state) => state.setPlaybackSource);
   const setPlaybackContext = usePlayerStore((state) => state.setPlaybackContext);
   const [madeForCards, setMadeForCards] = useState<HomeShelfCard[]>([]);
+  const [madeForAlbumCards, setMadeForAlbumCards] = useState<HomeShelfCard[]>([]);
   const [isArtistsLoading, setIsArtistsLoading] = useState(true);
+  const [isAlbumsLoading, setIsAlbumsLoading] = useState(true);
   const [artistsError, setArtistsError] = useState<string | null>(null);
+  const [albumsError, setAlbumsError] = useState<string | null>(null);
 
   useEffect(() => {
     setIsArtistsLoading(true);
     setArtistsError(null);
     api.get('/artists')
       .then((res: any) => {
-        const formatted = (res.data || []).map((artist: any) => ({
+        const raw = res.data;
+        const artists = Array.isArray(raw)
+          ? raw
+          : raw?.content || raw?.artists || raw?.data || [];
+        const formatted = artists.map((artist: any) => ({
           id: `artist-${artist.id}`,
           title: artist.name,
           subtitle: artist.bio || (artist.genres?.length ? artist.genres[0] : 'Artist'),
           image: artist.imageUrl || artist.picture || artist.images?.[0]?.url || `https://ui-avatars.com/api/?name=${encodeURIComponent(artist.name)}&background=random`,
           to: `/artist/${artist.id}`,
-          shape: 'circle',
+          shape: 'circle' as const,
         }));
         setMadeForCards(formatted);
       })
@@ -445,6 +453,33 @@ function HomePage() {
       })
       .finally(() => {
         setIsArtistsLoading(false);
+      });
+
+    setIsAlbumsLoading(true);
+    setAlbumsError(null);
+    api.get('/albums')
+      .then((res: any) => {
+        // Backend farklı formatlarda dönebilir: [], {content: []}, {albums: []}, {data: []}
+        const raw = res.data;
+        const albums = Array.isArray(raw)
+          ? raw
+          : raw?.content || raw?.albums || raw?.data || [];
+        const formatted = albums.map((album: any) => ({
+          id: `album-${album.id}`,
+          title: album.title,
+          subtitle: `${album.artistName || 'Artist'} • ${album.releaseYear || 'Album'}`,
+          image: album.coverImageUrl || `https://picsum.photos/seed/album-${album.id}/640/640`,
+          to: `/album/${album.id}`,
+          shape: 'square' as const,
+        }));
+        setMadeForAlbumCards(formatted);
+      })
+      .catch((err: any) => {
+        console.error('Failed to fetch albums:', err?.response?.status, err?.response?.data, err?.message);
+        setAlbumsError(`Albümler yüklenemedi: ${err?.message || 'Bilinmeyen hata'}`);
+      })
+      .finally(() => {
+        setIsAlbumsLoading(false);
       });
   }, []);
 
@@ -899,6 +934,92 @@ function HomePage() {
           </div>
 
           <CarouselEdgeControls controls={madeForCarousel} t={t} />
+        </div>
+      </section>
+
+      {/* Popular Albums Shelf */}
+      <section className="mt-10">
+        <div className="mb-4 flex items-end justify-between">
+          <div>
+            <h3 className="text-2xl font-black leading-none tracking-tight">{t('homePage.sections.popularAlbums')}</h3>
+          </div>
+          <button className="text-sm font-semibold text-zinc-300 transition hover:text-zinc-100">
+            {t('common.actions.showAll')}
+          </button>
+        </div>
+
+        <div
+          className="relative"
+          onMouseMove={albumsCarousel.handleMouseMove}
+          onMouseLeave={albumsCarousel.handleMouseLeave}
+        >
+          <div
+            ref={albumsCarousel.scrollerRef}
+            className="flex gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          >
+            {isAlbumsLoading ? (
+              <div className="flex w-full items-center justify-center py-10 text-zinc-400">
+                <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-500 border-t-emerald-500" />
+              </div>
+            ) : albumsError ? (
+              <div className="flex w-full items-center justify-center py-10 text-zinc-400">
+                {albumsError}
+              </div>
+            ) : madeForAlbumCards.length === 0 ? (
+              <div className="flex w-full items-center justify-center py-10 text-zinc-400">
+                No albums found.
+              </div>
+            ) : (
+              madeForAlbumCards.map((card) => {
+                const isNowPlayingCard = isShelfCardNowPlaying(card);
+
+                return (
+                  <NavLink
+                    key={card.id}
+                    to={card.to}
+                    className="group/card relative w-[220px] min-w-[220px] rounded-xl bg-zinc-900/75 p-3 transition hover:bg-zinc-800/85"
+                  >
+                    <div className="relative mb-3 aspect-square overflow-hidden rounded-lg">
+                      <img
+                        src={card.image}
+                        alt={card.title}
+                        className="h-full w-full object-cover"
+                        loading="lazy"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent" />
+
+                      <div className="absolute bottom-6 right-6">
+                        {isNowPlayingCard ? (
+                          <span className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-black/65 ring-1 ring-white/15">
+                            <NowPlayingEqualizer className="h-5 w-5" />
+                          </span>
+                        ) : (
+                          <span className="inline-flex h-12 w-12 translate-y-2 items-center justify-center rounded-full bg-emerald-500 text-black opacity-0 shadow-2xl shadow-black/60 transition-all duration-200 group-hover/card:translate-y-0 group-hover/card:opacity-100">
+                            <svg
+                              viewBox="0 0 24 24"
+                              className="h-6 w-6 fill-current"
+                              aria-hidden="true"
+                            >
+                              <path d="m7.05 3.606 13.49 7.788a.7.7 0 0 1 0 1.212L7.05 20.394A.7.7 0 0 1 6 19.788V4.212a.7.7 0 0 1 1.05-.606"></path>
+                            </svg>
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <p
+                      className={`line-clamp-1 text-base font-semibold ${isNowPlayingCard ? 'text-emerald-400' : 'text-zinc-100'}`}
+                    >
+                      {card.title}
+                    </p>
+                    <p className="mt-1 line-clamp-2 text-sm text-zinc-400">{card.subtitle}</p>
+                  </NavLink>
+                );
+              })
+            )}
+          </div>
+
+          <CarouselEdgeControls controls={albumsCarousel} t={t} />
         </div>
       </section>
 

@@ -1,10 +1,11 @@
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import api from '@/lib/axios';
 import { Link } from 'react-router-dom';
 import { NowPlayingEqualizer } from '@/shared/components/NowPlayingEqualizer';
 import { usePlayerStore } from '@/store/playerStore';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useToastStore } from '@/store/toastStore';
-const albumsJson = { albums: [] };
 
 type SpotifyExternalUrls = {
   spotify: string;
@@ -39,36 +40,6 @@ type SpotifyImage = {
   height: number;
   width: number;
 };
-
-type SpotifyAlbum = {
-  id: string;
-  type: 'album';
-  uri: string;
-  name: string;
-  album_type: 'album' | 'single' | 'compilation';
-  release_date: string;
-  release_date_precision: 'year' | 'month' | 'day';
-  total_tracks: number;
-  label: string;
-  popularity: number;
-  genres: string[];
-  external_urls: SpotifyExternalUrls;
-  images: SpotifyImage[];
-  artists: SpotifyArtist[];
-  copyrights: Array<{
-    text: string;
-    type: 'P' | 'C';
-  }>;
-  tracks: {
-    items: SpotifyTrack[];
-  };
-};
-
-type AlbumsDataset = {
-  albums: SpotifyAlbum[];
-};
-
-const albums = (albumsJson as unknown as AlbumsDataset).albums;
 
 const albumThemes: Record<string, { header: string; body: string; fallbackCover: string }> = {
   'neon-nights-2024': {
@@ -129,6 +100,18 @@ const formatAlbumDuration = (tracks: SpotifyTrack[], minLabel: string, hrLabel: 
 
 function AlbumDetailView({ albumId }: AlbumDetailViewProps) {
   const { t } = useTranslation();
+  const [albumData, setAlbumData] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (!albumId) return;
+    setIsLoading(true);
+    api.get(`/albums/${albumId}`)
+      .then(res => setAlbumData(res.data))
+      .catch(err => console.error('Failed to fetch album:', err))
+      .finally(() => setIsLoading(false));
+  }, [albumId]);
+
   const likedSongs = useLibraryStore((state) => state.likedSongs);
   const toggleLikedSong = useLibraryStore((state) => state.toggleLikedSong);
   const addToast = useToastStore((state) => state.addToast);
@@ -141,23 +124,38 @@ function AlbumDetailView({ albumId }: AlbumDetailViewProps) {
   const storeTrack = usePlayerStore((state) => state.currentTrack);
   const isPlaying = usePlayerStore((state) => state.isPlaying);
   const playbackSource = usePlayerStore((state) => state.playbackSource);
-  const selectedAlbum = albums.find((album) => album.id === albumId);
-  const album = selectedAlbum ?? albums[0];
-  const theme = albumThemes[album.id] ?? {
+  if (isLoading || !albumData) {
+    return (
+      <div className="flex h-full items-center justify-center py-20">
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-zinc-800 border-t-emerald-500" />
+      </div>
+    );
+  }
+
+  const album = {
+    ...albumData,
+    name: albumData.title,
+    images: albumData.coverImageUrl ? [{ url: albumData.coverImageUrl }] : [],
+    artists: [{ name: albumData.artistName, id: albumData.artistId }],
+    tracks: { items: [] }, // Backend patch didn't show tracks in AlbumResponse
+    release_date: `${albumData.releaseYear}-01-01`,
+  };
+
+  const theme = albumThemes[albumId || ''] ?? {
     header: 'from-zinc-500 via-zinc-800 to-zinc-950',
     body: 'from-zinc-900/50 to-zinc-950',
     fallbackCover: 'from-zinc-300 via-zinc-500 to-zinc-700',
   };
 
   const primaryImage = album.images[0];
-  const albumArtists = album.artists.map((artist) => artist.name).join(', ');
-  const notFound = !selectedAlbum;
+  const albumArtists = album.artists.map((artist: any) => artist.name).join(', ');
+  const notFound = !albumData && !isLoading;
   const releaseYear = album.release_date.slice(0, 4);
   const trackItems = [...album.tracks.items].sort((a, b) => a.track_number - b.track_number);
   const albumQueue = trackItems.map((track) => ({
     id: track.id,
     title: track.name,
-    artist: track.artists.map((artist) => artist.name).join(', '),
+    artist: track.artists.map((artist: any) => artist.name).join(', '),
     cover: primaryImage?.url ?? '',
     src: track.preview_url ?? undefined,
     albumId: album.id,
@@ -182,7 +180,7 @@ function AlbumDetailView({ albumId }: AlbumDetailViewProps) {
     setTrack({
       id: track.id,
       title: track.name,
-      artist: track.artists.map((artist) => artist.name).join(', '),
+      artist: track.artists.map((artist: any) => artist.name).join(', '),
       cover: primaryImage?.url ?? '',
       src: track.preview_url,
       albumId: album.id,
@@ -404,7 +402,7 @@ function AlbumDetailView({ albumId }: AlbumDetailViewProps) {
                   {track.name}
                 </Link>
                 <p className="truncate text-sm text-zinc-400">
-                  {track.artists.map((artist) => artist.name).join(', ')}
+                  {track.artists.map((artist: any) => artist.name).join(', ')}
                 </p>
               </div>
               <button

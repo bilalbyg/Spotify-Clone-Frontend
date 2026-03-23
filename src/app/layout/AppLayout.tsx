@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useMemo, useRef, useState } from 'react';
+import api from '@/lib/axios';
 import { useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router-dom';
 import { PlayerBar } from '@/features/player';
@@ -62,6 +63,13 @@ function AppLayout() {
   const customPlaylists = useLibraryStore((state) => state.customPlaylists);
   const likedSongs = useLibraryStore((state) => state.likedSongs);
   const currentTrack = usePlayerStore((state) => state.currentTrack);
+  const [artists, setArtists] = useState<any[]>([]);
+  const [albums, setAlbums] = useState<any[]>([]);
+
+  useEffect(() => {
+    api.get('/artists').then((res: any) => setArtists(res.data || []));
+    api.get('/albums').then((res: any) => setAlbums(res.data || []));
+  }, []);
 
   const hasInitializedPanel = useRef(false);
 
@@ -446,14 +454,34 @@ function AppLayout() {
         };
       });
 
+    const artistLibraryItems = artists.map((artist) => ({
+      id: artist.id,
+      title: artist.name,
+      meta: t('common.words.artist'),
+      type: 'artist' as const,
+      palette: 'from-zinc-500 to-zinc-300',
+      image: artist.imageUrl || artist.picture || artist.images?.[0]?.url,
+      route: `/artist/${artist.id}`,
+    }));
+
+    const albumLibraryItems = albums.map((album) => ({
+      id: album.id,
+      title: album.title,
+      meta: `${t('common.words.album')} . ${album.artistName}`,
+      type: 'album' as const,
+      palette: 'from-zinc-500 to-zinc-300',
+      image: album.coverImageUrl,
+      route: `/album/${album.id}`,
+    }));
+
     // We can insert the custom items right after the Liked Songs (index 0) or at the end
     // Here we'll just put them right after Liked Songs
     const result = [];
     if (baseItems.length > 0) result.push(baseItems[0]);
-    result.push(...publicPlaylists, ...customItems);
+    result.push(...publicPlaylists, ...customItems, ...artistLibraryItems, ...albumLibraryItems);
     if (baseItems.length > 1) result.push(...baseItems.slice(1));
     return result;
-  }, [t, customPlaylists, likedSongs.length]);
+  }, [t, customPlaylists, likedSongs.length, artists, albums]);
 
   const getResizerClass = (side: ResizeSide) =>
     `group relative hidden w-2 cursor-col-resize rounded-full lg:block ${

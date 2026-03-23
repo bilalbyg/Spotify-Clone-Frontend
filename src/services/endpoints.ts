@@ -8,6 +8,8 @@ export const endpoints = {
     details: (id: string) => `/playlists/${id}`,
   },
   album: {
+    list: '/albums',
+    byArtist: (artistId: string) => `/albums/artist/${artistId}`,
     details: (id: string) => `/albums/${id}`,
   },
   artist: {
