@@ -421,7 +421,7 @@ export function WorkspaceLayout({
   const nowPlayingTextStyle = showAnimatedNowPlaying
     ? undefined
     : { textShadow: '0 2px 8px rgba(0, 0, 0, 0.95)' };
-  const rightPanelTitle = currentTrack?.artist ?? t('layout.workspace.rightPanel.nowPlaying');
+  const rightPanelTitle = currentTrack?.artist || t('layout.workspace.rightPanel.nowPlaying');
   const monthlyListeners = useMemo(() => {
     const seed = rightPanelTitle.split('').reduce((total, char) => total + char.charCodeAt(0), 0);
     return 180000 + (seed % 850000);

@@ -167,11 +167,26 @@ function ArtistDetailView({ artistId }: ArtistDetailViewProps) {
     if (!artistId) return;
 
     setIsLoading(true);
-    // Fetch artist details
+    // Fetch artist details with fallback
     api.get(`/artists/${artistId}`)
-      .then(res => setArtist(res.data))
-      .catch(err => console.error('Failed to fetch artist:', err))
-      .finally(() => setIsLoading(false));
+      .then(res => {
+        setArtist(res.data);
+        setIsLoading(false);
+      })
+      .catch(err => {
+        console.error('Failed to fetch artist directly:', err);
+        api.get('/artists')
+          .then(resList => {
+            const raw = resList.data;
+            const artists = Array.isArray(raw) ? raw : raw?.content || raw?.artists || raw?.data || [];
+            const fallbackArtist = artists.find((a: any) => a.id === artistId);
+            if (fallbackArtist) {
+              setArtist(fallbackArtist);
+            }
+          })
+          .catch(e => console.error('Fallback fetch failed:', e))
+          .finally(() => setIsLoading(false));
+      });
 
     // Fetch artist albums
     api.get(`/albums/artist/${artistId}`)
@@ -183,23 +198,50 @@ function ArtistDetailView({ artistId }: ArtistDetailViewProps) {
           release_date: `${album.releaseYear}-01-01`,
           total_tracks: 0,
           images: album.coverImageUrl ? [{ url: album.coverImageUrl }] : [],
-          artist_ids: [album.artistId]
+          artist_ids: [album.artistId || artistId]
         }));
         setArtistAlbums(formattedAlbums);
       })
       .catch(err => console.error('Failed to fetch artist albums:', err));
 
-    // For now tracks are still empty
-    setCurrentArtistTracks([]);
+    // Fetch artist tracks
+    api.get('/songs')
+      .then(res => {
+         const raw = res.data;
+         const songs = Array.isArray(raw) ? raw : raw?.content || raw?.songs || raw?.data || [];
+         const mappedSongs = songs
+           .filter((s: any) => s.artistId === artistId || s.artist_ids?.includes(artistId))
+           .map((s: any) => ({
+             id: s.id,
+             name: s.title,
+             album_id: s.albumId,
+             artist_ids: [s.artistId || artistId],
+             duration_ms: (s.duration || 0) * 1000,
+             popularity: Math.floor(Math.random() * 40) + 60,
+             preview_url: s.audioUrl
+           }));
+         setCurrentArtistTracks(mappedSongs);
+      })
+      .catch(err => console.error('Failed to fetch artist tracks:', err));
   }, [artistId]);
 
   const notFound = !artist && !isLoading;
 
-  if (isLoading || !artist) {
+  if (isLoading) {
     return (
       <div className="flex h-full items-center justify-center py-20">
         <div className="h-10 w-10 animate-spin rounded-full border-4 border-zinc-800 border-t-emerald-500" />
       </div>
+    );
+  }
+
+  if (notFound || !artist) {
+    return (
+      <section className="overflow-hidden rounded-xl bg-zinc-950 p-6">
+        <div className="mb-4 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-sm text-amber-200">
+          {t('artistDetail.notFound')} <code>{artistId}</code>.
+        </div>
+      </section>
     );
   }
 
@@ -216,7 +258,7 @@ function ArtistDetailView({ artistId }: ArtistDetailViewProps) {
     )
     .slice(0, 4);
 
-  const artistImage = artist.imageUrl || artist.picture || (artist.images && artist.images.length > 0 ? artist.images[0] : null);
+  const artistImage = artist.imageUrl || artist.picture || (artist.images && artist.images.length > 0 ? artist.images[0]?.url : null);
   const genres = artist.genres ? artist.genres.slice(0, 3).join(' • ') : '';
 
   /* Helper: resolve album cover for a track */
@@ -225,9 +267,13 @@ function ArtistDetailView({ artistId }: ArtistDetailViewProps) {
     const fromAlbumsJson = albumCoverFromAlbumsJson.get(track.id);
     if (fromAlbumsJson) return fromAlbumsJson;
 
+    /* Try fetched artist albums */
+    const fetchedAlbum = artistAlbums.find((a: any) => a.id === track.album_id);
+    if (fetchedAlbum?.images?.[0]?.url) return fetchedAlbum.images[0].url;
+
     /* Fallback: spotify-data album images */
     const album = data.albums.find((a) => a.id === track.album_id);
-    return album?.images[0]?.url ?? (artistImage?.url || '') ?? '';
+    return album?.images[0]?.url ?? (typeof artistImage === 'string' ? artistImage : '') ?? '';
   };
 
   /* Helper: resolve preview_url */
@@ -297,7 +343,7 @@ function ArtistDetailView({ artistId }: ArtistDetailViewProps) {
       <header className="relative h-[340px] overflow-hidden bg-zinc-900">
         {artistImage ? (
           <img
-            src={artistImage.url}
+            src={typeof artistImage === 'string' ? artistImage : artistImage.url}
             alt={artist.name}
             className="absolute inset-0 h-full w-full object-cover"
             loading="lazy"
@@ -325,7 +371,7 @@ function ArtistDetailView({ artistId }: ArtistDetailViewProps) {
           </h1>
           <p className="mt-3 text-lg text-zinc-100/90">
             {t('artistDetail.monthlyListeners', {
-              count: formatNumber(artist.monthly_listeners ?? 0, locale) as unknown as number,
+              count: formatNumber(artist.monthly_listeners ?? artist.popularity ?? 0, locale) as unknown as number,
             })}
           </p>
           <p className="mt-1 text-sm text-zinc-300">{genres || t('artistDetail.noGenres')}</p>
@@ -366,7 +412,7 @@ function ArtistDetailView({ artistId }: ArtistDetailViewProps) {
           </button>
           <p className="ml-auto text-sm text-zinc-400">
             {t('artistDetail.followers', {
-              count: formatNumber(artist.followers.total, locale) as unknown as number,
+              count: formatNumber(artist.followers?.total ?? artist.popularity ?? 0, locale) as unknown as number,
             })}
           </p>
         </div>

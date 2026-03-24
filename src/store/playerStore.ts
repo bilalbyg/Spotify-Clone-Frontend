@@ -26,6 +26,7 @@ type PlayerState = {
   isPlaying: boolean;
   volume: number;
   progress: number;
+  savedTime: number;          // exact playback position in seconds
   repeatMode: PlayerMode;
   shuffle: boolean;
   playbackSource: PlaybackSource;
@@ -44,6 +45,7 @@ type PlayerState = {
   toggleShuffle: () => void;
   setVolume: (volume: number) => void;
   setProgress: (progress: number) => void;
+  setSavedTime: (seconds: number) => void;
   playNextInQueue: () => boolean;
   playPreviousInQueue: () => boolean;
 };
@@ -56,11 +58,12 @@ export const usePlayerStore = create<PlayerState>()(
       isPlaying: false,
       volume: 0.8,
       progress: 0,
+      savedTime: 0,
       repeatMode: 'off',
       shuffle: false,
       playbackSource: 'player',
       playbackContext: { type: 'none', id: '' },
-      setTrack: (track) => set({ currentTrack: track, isPlaying: true }),
+      setTrack: (track) => set({ currentTrack: track, isPlaying: true, savedTime: 0 }),
       setQueue: (queue) => set({ queue }),
       setIsPlaying: (isPlaying) => set({ isPlaying }),
       setPlaybackSource: (source) => set({ playbackSource: source }),
@@ -71,6 +74,7 @@ export const usePlayerStore = create<PlayerState>()(
       toggleShuffle: () => set((state) => ({ shuffle: !state.shuffle })),
       setVolume: (volume) => set({ volume }),
       setProgress: (progress) => set({ progress }),
+      setSavedTime: (seconds) => set({ savedTime: seconds }),
       playNextInQueue: () => {
         const { currentTrack, queue, shuffle } = get();
         if (!currentTrack || queue.length === 0) {
@@ -109,12 +113,33 @@ export const usePlayerStore = create<PlayerState>()(
     }),
     {
       name: 'spotify-clone:player',
+      version: 2,
+      migrate: (_persistedState, version) => {
+        // v0: had Nova Echoes placeholder data — reset fully.
+        // v1 -> v2: add savedTime field.
+        const base = {
+          currentTrack: null as PlayerTrack | null,
+          queue: [] as PlayerTrack[],
+          volume: 0.8,
+          repeatMode: 'off' as PlayerMode,
+          shuffle: false,
+          savedTime: 0,
+          playbackContext: { type: 'none' as const, id: '' },
+        };
+        if (version < 1) {
+          return base;
+        }
+        // v1 -> v2: keep existing data, just add savedTime
+        const prev = _persistedState as typeof base;
+        return { ...prev, savedTime: prev.savedTime ?? 0 };
+      },
       partialize: (state) => ({
         currentTrack: state.currentTrack,
         queue: state.queue,
         volume: state.volume,
         repeatMode: state.repeatMode,
         shuffle: state.shuffle,
+        savedTime: state.savedTime,
         playbackContext: state.playbackContext,
       }),
     },

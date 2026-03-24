@@ -35,11 +35,7 @@ type SpotifyTrack = {
   artists: SpotifyArtist[];
 };
 
-type SpotifyImage = {
-  url: string;
-  height: number;
-  width: number;
-};
+
 
 const albumThemes: Record<string, { header: string; body: string; fallbackCover: string }> = {
   'neon-nights-2024': {
@@ -101,15 +97,58 @@ const formatAlbumDuration = (tracks: SpotifyTrack[], minLabel: string, hrLabel: 
 function AlbumDetailView({ albumId }: AlbumDetailViewProps) {
   const { t } = useTranslation();
   const [albumData, setAlbumData] = useState<any>(null);
+  const [albumSongs, setAlbumSongs] = useState<SpotifyTrack[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (!albumId) return;
     setIsLoading(true);
-    api.get(`/albums/${albumId}`)
-      .then(res => setAlbumData(res.data))
-      .catch(err => console.error('Failed to fetch album:', err))
-      .finally(() => setIsLoading(false));
+
+    // Fetch album details
+    const albumPromise = api.get(`/albums/${albumId}`)
+      .then(res => {
+        setAlbumData(res.data);
+        return res.data;
+      })
+      .catch(err => {
+        console.error('Failed to fetch album:', err);
+        // Fallback: try fetching from /albums list
+        return api.get('/albums').then(resList => {
+          const raw = resList.data;
+          const albums = Array.isArray(raw) ? raw : raw?.content || raw?.albums || raw?.data || [];
+          const found = albums.find((a: any) => a.id === albumId);
+          if (found) setAlbumData(found);
+          return found;
+        }).catch(() => null);
+      });
+
+    // Fetch songs that belong to this album
+    const songsPromise = api.get('/songs')
+      .then(res => {
+        const raw = res.data;
+        const songs = Array.isArray(raw) ? raw : raw?.content || raw?.songs || raw?.data || [];
+        const albumTracks = songs
+          .filter((s: any) => s.albumId === albumId)
+          .map((s: any, idx: number) => ({
+            id: s.id,
+            type: 'track' as const,
+            uri: '',
+            name: s.title,
+            track_number: idx + 1,
+            disc_number: 1,
+            duration_ms: (s.duration || 0) * 1000,
+            explicit: false,
+            is_playable: true,
+            popularity: 80,
+            preview_url: s.audioUrl || null,
+            external_urls: { spotify: '' },
+            artists: [{ id: s.artistId || '', type: 'artist' as const, name: s.artistName || '', uri: '', external_urls: { spotify: '' } }],
+          }));
+        setAlbumSongs(albumTracks);
+      })
+      .catch(err => console.error('Failed to fetch songs for album:', err));
+
+    Promise.all([albumPromise, songsPromise]).finally(() => setIsLoading(false));
   }, [albumId]);
 
   const likedSongs = useLibraryStore((state) => state.likedSongs);
@@ -124,7 +163,8 @@ function AlbumDetailView({ albumId }: AlbumDetailViewProps) {
   const storeTrack = usePlayerStore((state) => state.currentTrack);
   const isPlaying = usePlayerStore((state) => state.isPlaying);
   const playbackSource = usePlayerStore((state) => state.playbackSource);
-  if (isLoading || !albumData) {
+
+  if (isLoading) {
     return (
       <div className="flex h-full items-center justify-center py-20">
         <div className="h-10 w-10 animate-spin rounded-full border-4 border-zinc-800 border-t-emerald-500" />
@@ -132,13 +172,25 @@ function AlbumDetailView({ albumId }: AlbumDetailViewProps) {
     );
   }
 
+  if (!albumData) {
+    return (
+      <section className="overflow-hidden rounded-xl bg-zinc-950 p-6">
+        <div className="mb-4 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-sm text-amber-200">
+          {t('albumDetail.notFound')} <code>{albumId}</code>.
+        </div>
+      </section>
+    );
+  }
+
   const album = {
     ...albumData,
-    name: albumData.title,
-    images: albumData.coverImageUrl ? [{ url: albumData.coverImageUrl }] : [],
-    artists: [{ name: albumData.artistName, id: albumData.artistId }],
-    tracks: { items: [] }, // Backend patch didn't show tracks in AlbumResponse
-    release_date: `${albumData.releaseYear}-01-01`,
+    name: albumData.title || albumData.name,
+    images: albumData.coverImageUrl ? [{ url: albumData.coverImageUrl }] : (albumData.images || []),
+    artists: albumData.artistName
+      ? [{ name: albumData.artistName, id: albumData.artistId }]
+      : (albumData.artists || [{ name: 'Unknown', id: '' }]),
+    tracks: { items: albumSongs },
+    release_date: albumData.releaseYear ? `${albumData.releaseYear}-01-01` : (albumData.release_date || ''),
   };
 
   const theme = albumThemes[albumId || ''] ?? {
@@ -149,9 +201,8 @@ function AlbumDetailView({ albumId }: AlbumDetailViewProps) {
 
   const primaryImage = album.images[0];
   const albumArtists = album.artists.map((artist: any) => artist.name).join(', ');
-  const notFound = !albumData && !isLoading;
   const releaseYear = album.release_date.slice(0, 4);
-  const trackItems = [...album.tracks.items].sort((a, b) => a.track_number - b.track_number);
+  const trackItems = [...album.tracks.items].sort((a: any, b: any) => a.track_number - b.track_number);
   const albumQueue = trackItems.map((track) => ({
     id: track.id,
     title: track.name,
@@ -266,11 +317,6 @@ function AlbumDetailView({ albumId }: AlbumDetailViewProps) {
       </header>
 
       <div className={`bg-gradient-to-b ${theme.body} px-6 pb-8 pt-5`}>
-        {notFound && (
-          <div className="mb-4 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-sm text-amber-200">
-            {t('albumDetail.notFound')} <code>{album.id}</code>.
-          </div>
-        )}
 
         <div className="mb-6 flex flex-wrap items-center gap-4 text-zinc-200">
           <button

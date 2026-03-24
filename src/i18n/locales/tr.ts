@@ -94,6 +94,7 @@ const tr = {
       episodesYouMightLike: 'Sevebileceğin bölümler',
       popularRadio: 'Popüler radyo',
       popularAlbums: 'Popüler Albümler',
+      popularSongs: 'Popüler Şarkılar',
       yourPlaylists: 'Senin playlistlerin',
       nonStopHint: 'Favori şarkı ve sanatçılarına göre kesintisiz müzik.',
     },
@@ -145,9 +146,7 @@ const tr = {
       },
     },
     quickAccess: {
-      novaEchoes: 'Nova Echoes',
       likedSongs: 'Beğendiğin Şarkılar',
-      midnightFrequencies: 'Midnight Frequencies',
     },
     discoverCards: {
       newMusicFriday: 'Yeni Müzik Cuması',

@@ -44,125 +44,23 @@ type HomeShelfCard = {
   artistHint?: string;
 };
 
-const jumpBackInCards: HomeShelfCard[] = [
-  /*
-  {
-    id: 'jump-midnight-frequencies',
-    title: 'Midnight Frequencies',
-    subtitle: 'Nova Echoes — 2025 album.',
-    image: 'https://picsum.photos/seed/album-midnight-640/640/640',
-    to: '/album/c3d4e5f6-a7b8-4c9d-0e1f-2a3b4c5d6e7f',
-    artistHint: 'Nova Echoes',
-  },
-*/
-];
+const jumpBackInCards: HomeShelfCard[] = [];
 
-const recentlyPlayedCards: HomeShelfCard[] = [
-  /*
-  {
-    id: 'recent-nova-echoes',
-    title: 'Nova Echoes',
-    subtitle: '',
-    image: 'https://picsum.photos/seed/artist-zeynep-640/640/640',
-    to: '/artist/b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e',
-    shape: 'circle',
-    artistHint: 'Nova Echoes',
-  },
-  {
-    id: 'recent-liked-songs',
-    title: 'Liked Songs',
-    subtitle: '',
-    image: 'https://picsum.photos/seed/liked-songs-cover/640/640',
-    to: '/playlist/liked-songs',
-    artistHint: 'Nova Echoes',
-  },
-*/
-];
+const recentlyPlayedCards: HomeShelfCard[] = [];
 
-const topMixCards: HomeShelfCard[] = [
-  /*
-  {
-    id: 'top-nova-echoes-mix',
-    title: 'Nova Echoes Mix',
-    subtitle: 'Fading Signals, Neon Dusk and more...',
-    image: 'https://picsum.photos/seed/top-mix-nova-echoes/640/640',
-    badge: 'Nova Echoes Mix',
-    badgeClassName: 'bg-zinc-200/95',
-    to: '/playlist/liked-songs',
-    artistHint: 'Nova Echoes',
-  },
-*/
-];
+const topMixCards: HomeShelfCard[] = [];
 
-const favoriteArtistCards: HomeShelfCard[] = [
-  /*
-  {
-    id: 'fav-nova-echoes',
-    title: 'Nova Echoes',
-    subtitle: 'Artist',
-    image: 'https://picsum.photos/seed/artist-zeynep-640/640/640',
-    to: '/artist/b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e',
-    shape: 'circle',
-    artistHint: 'Nova Echoes',
-  },
-*/
-];
+const favoriteArtistCards: HomeShelfCard[] = [];
 
-const moreLikeLvbelCards: HomeShelfCard[] = [
-  /*
-  {
-    id: 'more-like-nova-1',
-    title: 'Nova Echoes Radio',
-    subtitle: 'With Nova Echoes, Ghost Frequencies and more',
-    image: 'https://picsum.photos/seed/more-like-nova-1/640/640',
-    to: '/playlist/liked-songs',
-    topTag: 'RADIO',
-    artistHint: 'Nova Echoes',
-  },
-*/
-];
+const moreLikeLvbelCards: HomeShelfCard[] = [];
 
-const recommendedStationCards: HomeShelfCard[] = [
-  /*
-  {
-    id: 'recommended-nova-echoes',
-    title: 'Nova Echoes',
-    subtitle: 'With Amber Waves, Ghost Frequencies and more',
-    image: 'https://picsum.photos/seed/recommended-nova-echoes/640/640',
-    to: '/playlist/liked-songs',
-    topTag: 'RADIO',
-    artistHint: 'Nova Echoes',
-  },
-*/
-];
+const recommendedStationCards: HomeShelfCard[] = [];
 
 const episodesYouMightLikeCards: HomeShelfCard[] = [];
 
-const popularRadioCards: HomeShelfCard[] = [
-  /*
-  {
-    id: 'popular-nova-echoes',
-    title: 'Nova Echoes',
-    subtitle: 'With Ghost Frequencies, Neon Dusk and more',
-    image: 'https://picsum.photos/seed/popular-nova-echoes/640/640',
-    to: '/playlist/liked-songs',
-    topTag: 'RADIO',
-    artistHint: 'Nova Echoes',
-  },
-*/
-];
+const popularRadioCards: HomeShelfCard[] = [];
 
-const yourPlaylistCards: HomeShelfCard[] = [
-  /*
-  {
-    id: 'your-playlist-liked',
-    title: 'Liked Songs',
-    subtitle: 'By Emre Kaya',
-    image: 'https://picsum.photos/seed/liked-songs-cover/640/640',
-    to: '/playlist/liked-songs',
-  },
-*/
-];
+const yourPlaylistCards: HomeShelfCard[] = [];
 
 type HomeVideoRadioCard = {
   id: string;
@@ -177,22 +75,7 @@ type HomeVideoRadioCard = {
   artistHint?: string;
 };
 
-const videoRadioCards: HomeVideoRadioCard[] = [
-  /*
-  {
-    id: 'video-nova-echoes',
-    title: 'Nova Echoes Radio',
-    subtitle: 'Playlist • Spotify',
-    description: 'With Ghost Frequencies, Neon Dusk and more',
-    image: 'https://picsum.photos/seed/video-radio-nova/1200/1200',
-    to: '/playlist/liked-songs',
-    label: 'More like Nova Echoes',
-    tileImage: 'https://picsum.photos/seed/video-radio-tile-nova/220/220',
-    tileTitle: 'Nova Echoes',
-    artistHint: 'Nova Echoes',
-  },
-*/
-];
+const videoRadioCards: HomeVideoRadioCard[] = [];
 
 const homeFooterColumns = [
   {
@@ -373,7 +256,7 @@ const CarouselEdgeControls = ({
           className="absolute left-2 top-1/2 z-10 inline-flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-zinc-800/90 text-zinc-100 shadow-lg shadow-black/60 transition hover:scale-105 hover:bg-zinc-700"
         >
           <svg viewBox="0 0 24 24" className="h-5 w-5 rotate-180 fill-current" aria-hidden="true">
-            <path d="M9.3 5.3a1 1 0 0 0 0 1.4L14.6 12l-5.3 5.3a1 1 0 1 0 1.4 1.4l6-6a1 1 0 0 0 0-1.4l-6-6a1 1 0 0 0-1.4 0z" />
+            <path d="m7.05 3.606 13.49 7.788a.7.7 0 0 1 0 1.212L7.05 20.394A.7.7 0 0 1 6 19.788V4.212a.7.7 0 0 1 1.05-.606"></path>
           </svg>
         </button>
       </>
@@ -389,7 +272,7 @@ const CarouselEdgeControls = ({
           className="absolute right-2 top-1/2 z-10 inline-flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-zinc-800/90 text-zinc-100 shadow-lg shadow-black/60 transition hover:scale-105 hover:bg-zinc-700"
         >
           <svg viewBox="0 0 24 24" className="h-5 w-5 fill-current" aria-hidden="true">
-            <path d="M9.3 5.3a1 1 0 0 0 0 1.4L14.6 12l-5.3 5.3a1 1 0 1 0 1.4 1.4l6-6a1 1 0 0 0 0-1.4l-6-6a1 1 0 0 0-1.4 0z" />
+            <path d="m7.05 3.606 13.49 7.788a.7.7 0 0 1 0 1.212L7.05 20.394A.7.7 0 0 1 6 19.788V4.212a.7.7 0 0 1 1.05-.606"></path>
           </svg>
         </button>
       </>
@@ -404,6 +287,7 @@ function HomePage() {
   const [activeFilter, setActiveFilter] = useState<'all' | 'music' | 'podcasts'>('all');
   const madeForCarousel = useCarouselControls();
   const albumsCarousel = useCarouselControls();
+  const songsCarousel = useCarouselControls();
   const jumpBackInCarousel = useCarouselControls();
   const recentlyPlayedCarousel = useCarouselControls();
   const topMixesCarousel = useCarouselControls();
@@ -423,10 +307,13 @@ function HomePage() {
   const setPlaybackContext = usePlayerStore((state) => state.setPlaybackContext);
   const [madeForCards, setMadeForCards] = useState<HomeShelfCard[]>([]);
   const [madeForAlbumCards, setMadeForAlbumCards] = useState<HomeShelfCard[]>([]);
+  const [madeForSongCards, setMadeForSongCards] = useState<HomeShelfCard[]>([]);
   const [isArtistsLoading, setIsArtistsLoading] = useState(true);
   const [isAlbumsLoading, setIsAlbumsLoading] = useState(true);
+  const [isSongsLoading, setIsSongsLoading] = useState(true);
   const [artistsError, setArtistsError] = useState<string | null>(null);
   const [albumsError, setAlbumsError] = useState<string | null>(null);
+  const [songsError, setSongsError] = useState<string | null>(null);
 
   useEffect(() => {
     setIsArtistsLoading(true);
@@ -457,14 +344,28 @@ function HomePage() {
 
     setIsAlbumsLoading(true);
     setAlbumsError(null);
-    api.get('/albums')
-      .then((res: any) => {
-        // Backend farklı formatlarda dönebilir: [], {content: []}, {albums: []}, {data: []}
-        const raw = res.data;
-        const albums = Array.isArray(raw)
+    setIsSongsLoading(true);
+    setSongsError(null);
+
+    Promise.all([
+      api.get('/albums').catch((err: any) => {
+        console.error('Failed to fetch albums:', err?.response?.status, err?.response?.data, err?.message);
+        setAlbumsError(`Albümler yüklenemedi: ${err?.message || 'Bilinmeyen hata'}`);
+        return null;
+      }),
+      api.get('/songs').catch((err: any) => {
+        console.error('Failed to fetch songs:', err?.response?.status, err?.response?.data, err?.message);
+        setSongsError(`Şarkılar yüklenemedi: ${err?.message || 'Bilinmeyen hata'}`);
+        return null;
+      })
+    ]).then(([albumsRes, songsRes]) => {
+      let albumsList: any[] = [];
+      if (albumsRes) {
+        const raw = albumsRes.data;
+        albumsList = Array.isArray(raw)
           ? raw
           : raw?.content || raw?.albums || raw?.data || [];
-        const formatted = albums.map((album: any) => ({
+        const formattedAlbums = albumsList.map((album: any) => ({
           id: `album-${album.id}`,
           title: album.title,
           subtitle: `${album.artistName || 'Artist'} • ${album.releaseYear || 'Album'}`,
@@ -472,15 +373,33 @@ function HomePage() {
           to: `/album/${album.id}`,
           shape: 'square' as const,
         }));
-        setMadeForAlbumCards(formatted);
-      })
-      .catch((err: any) => {
-        console.error('Failed to fetch albums:', err?.response?.status, err?.response?.data, err?.message);
-        setAlbumsError(`Albümler yüklenemedi: ${err?.message || 'Bilinmeyen hata'}`);
-      })
-      .finally(() => {
-        setIsAlbumsLoading(false);
-      });
+        setMadeForAlbumCards(formattedAlbums);
+      }
+      setIsAlbumsLoading(false);
+
+      if (songsRes) {
+        const raw = songsRes.data;
+        const songsList = Array.isArray(raw) ? raw : raw?.content || raw?.songs || raw?.data || [];
+        const formattedSongs = songsList.map((song: any) => {
+          const albumMatch = albumsList.find((a: any) => a.id === song.albumId);
+          const artistName = song.artistName || song.artist || albumMatch?.artistName || '';
+          const albumTitle = song.albumTitle || albumMatch?.title || '';
+          const subtitle = artistName && albumTitle
+            ? `${artistName} • ${albumTitle}`
+            : artistName || albumTitle || 'Song';
+          return {
+            id: `track-${song.id}`,
+            title: song.title,
+            subtitle,
+            image: albumMatch?.coverImageUrl || `https://picsum.photos/seed/album-${song.albumId || song.id}/640/640`,
+            to: `/track/${song.id}`,
+            shape: 'square' as const,
+          };
+        });
+        setMadeForSongCards(formattedSongs);
+      }
+      setIsSongsLoading(false);
+    });
   }, []);
 
   const filteredLibraryItems: LibraryItem[] = useMemo(
@@ -1018,8 +937,93 @@ function HomePage() {
               })
             )}
           </div>
-
           <CarouselEdgeControls controls={albumsCarousel} t={t} />
+        </div>
+      </section>
+
+      {/* Popular Songs Shelf */}
+      <section className="mt-10">
+        <div className="mb-4 flex items-end justify-between">
+          <div>
+            <h3 className="text-2xl font-black leading-none tracking-tight">{t('homePage.sections.popularSongs')}</h3>
+          </div>
+          <button className="text-sm font-semibold text-zinc-300 transition hover:text-zinc-100">
+            {t('common.actions.showAll')}
+          </button>
+        </div>
+
+        <div
+          className="relative"
+          onMouseMove={songsCarousel.handleMouseMove}
+          onMouseLeave={songsCarousel.handleMouseLeave}
+        >
+          <div
+            ref={songsCarousel.scrollerRef}
+            className="flex gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          >
+            {isSongsLoading ? (
+              <div className="flex w-full items-center justify-center py-10 text-zinc-400">
+                <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-500 border-t-emerald-500" />
+              </div>
+            ) : songsError ? (
+              <div className="flex w-full items-center justify-center py-10 text-zinc-400">
+                {songsError}
+              </div>
+            ) : madeForSongCards.length === 0 ? (
+              <div className="flex w-full items-center justify-center py-10 text-zinc-400">
+                No songs found.
+              </div>
+            ) : (
+              madeForSongCards.map((card) => {
+                const isNowPlayingCard = isShelfCardNowPlaying(card);
+
+                return (
+                  <NavLink
+                    key={card.id}
+                    to={card.to}
+                    className="group/card relative w-[220px] min-w-[220px] rounded-xl bg-zinc-900/75 p-3 transition hover:bg-zinc-800/85"
+                  >
+                    <div className="relative mb-3 aspect-square overflow-hidden rounded-lg">
+                      <img
+                        src={card.image}
+                        alt={card.title}
+                        className="h-full w-full object-cover"
+                        loading="lazy"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent" />
+
+                      <div className="absolute bottom-6 right-6">
+                        {isNowPlayingCard ? (
+                          <span className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-black/65 ring-1 ring-white/15">
+                            <NowPlayingEqualizer className="h-5 w-5" />
+                          </span>
+                        ) : (
+                          <span className="inline-flex h-12 w-12 translate-y-2 items-center justify-center rounded-full bg-emerald-500 text-black opacity-0 shadow-2xl shadow-black/60 transition-all duration-200 group-hover/card:translate-y-0 group-hover/card:opacity-100">
+                            <svg
+                              viewBox="0 0 24 24"
+                              className="h-6 w-6 fill-current"
+                              aria-hidden="true"
+                            >
+                              <path d="m7.05 3.606 13.49 7.788a.7.7 0 0 1 0 1.212L7.05 20.394A.7.7 0 0 1 6 19.788V4.212a.7.7 0 0 1 1.05-.606"></path>
+                            </svg>
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <p
+                      className={`line-clamp-1 text-base font-semibold ${isNowPlayingCard ? 'text-emerald-400' : 'text-zinc-100'}`}
+                    >
+                      {card.title}
+                    </p>
+                    <p className="mt-1 line-clamp-2 text-sm text-zinc-400">{card.subtitle}</p>
+                  </NavLink>
+                );
+              })
+            )}
+          </div>
+
+          <CarouselEdgeControls controls={songsCarousel} t={t} />
         </div>
       </section>
 

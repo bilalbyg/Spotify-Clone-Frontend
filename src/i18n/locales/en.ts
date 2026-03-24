@@ -94,6 +94,7 @@ const en = {
       episodesYouMightLike: 'Episodes you might like',
       popularRadio: 'Popular radio',
       popularAlbums: 'Popular Albums',
+      popularSongs: 'Popular Songs',
       yourPlaylists: 'Your playlists',
       nonStopHint: 'Non-stop music based on your favorite songs and artists.',
     },
@@ -145,9 +146,7 @@ const en = {
       },
     },
     quickAccess: {
-      novaEchoes: 'Nova Echoes',
       likedSongs: 'Liked Songs',
-      midnightFrequencies: 'Midnight Frequencies',
     },
     discoverCards: {
       newMusicFriday: 'New Music Friday',

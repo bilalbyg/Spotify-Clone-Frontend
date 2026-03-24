@@ -24,18 +24,10 @@ import { useTranslation } from 'react-i18next';
 import { usePlayerStore } from '@/store/playerStore';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useToastStore } from '@/store/toastStore';
+import api from '@/lib/axios';
+import { endpoints } from '@/services/endpoints';
 import './PlayerBar.css';
 
-// TEMPORARY: Empty data object to prevent crashes until backend integration is complete.
-const spotifyData: any = {
-  tracks: [],
-  albums: [],
-  artists: [],
-  playlists: [],
-  users: [],
-  episodes: [],
-  podcasts: [],
-};
 
 type PlayerTrack = {
   id: string;
@@ -51,70 +43,7 @@ type QueueTrack = PlayerTrack & {
   queuePosition: number;
 };
 
-const sampleQueue: PlayerTrack[] = [
-  {
-    id: 'd4e5f6a7-b8c9-4d0e-1f2a-3b4c5d6e7f80',
-    title: 'Fading Signals',
-    artist: 'Nova Echoes',
-    cover: 'https://picsum.photos/seed/album-midnight-640/1400/1400',
-    animatedCover: '/track-visual-1.gif',
-    src: '/audio/d4e5f6a7-b8c9-4d0e-1f2a-3b4c5d6e7f80.mp3',
-    lyrics: [
-      'Shadows on the wall, we keep the rhythm low.',
-      'Every beat is a memory, every pause is glow.',
-      'Fading signals in the midnight sky.',
-    ],
-  },
-  {
-    id: 'e5f6a7b8-c9d0-4e1f-2a3b-4c5d6e7f8091',
-    title: 'Neon Dusk',
-    artist: 'Nova Echoes',
-    cover: 'https://picsum.photos/seed/album-midnight-300/1400/1400',
-    animatedCover: '/track-visual-2.gif',
-    src: '/audio/e5f6a7b8-c9d0-4e1f-2a3b-4c5d6e7f8091.mp3',
-    lyrics: [
-      'Hold the line and take a breath.',
-      'Drop the noise and move with depth.',
-      'Neon lights at dusk, we chase the glow.',
-    ],
-  },
-  {
-    id: 'f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f809102',
-    title: 'Velvet Horizon',
-    artist: 'Nova Echoes',
-    cover: 'https://picsum.photos/seed/album-midnight-64/1400/1400',
-    src: '/audio/f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f809102.mp3',
-    lyrics: [
-      'One more round, one more tone.',
-      'Play it back until we are home.',
-      'The velvet horizon waits for us all.',
-    ],
-  },
-  {
-    id: 'a7b8c9d0-e1f2-4a3b-4c5d-6e7f80910213',
-    title: 'Ghost Frequencies',
-    artist: 'Nova Echoes',
-    cover: 'https://picsum.photos/seed/player-ghost-freq/1400/1400',
-    src: '/audio/a7b8c9d0-e1f2-4a3b-4c5d-6e7f80910213.mp3',
-    lyrics: [
-      'Echoes ripple through the static air.',
-      'Ghost frequencies, they are everywhere.',
-      'Tune in closer, feel the sound.',
-    ],
-  },
-  {
-    id: 'b8c9d0e1-f2a3-4b4c-5d6e-7f8091021324',
-    title: 'Amber Waves',
-    artist: 'Nova Echoes',
-    cover: 'https://picsum.photos/seed/player-amber-waves/1400/1400',
-    src: '/audio/b8c9d0e1-f2a3-4b4c-5d6e-7f8091021324.mp3',
-    lyrics: [
-      'Golden fields stretch to the edge.',
-      'Amber waves against the sky.',
-      'We drift along the endless line.',
-    ],
-  },
-];
+const sampleQueue: PlayerTrack[] = [];
 
 const deviceOptions = ['browser', 'livingRoom', 'bluetooth'] as const;
 const MIN_QUEUE_BUFFER = Math.max(0, sampleQueue.length - 1);
@@ -176,6 +105,8 @@ function PlayerBar() {
   const setPlaybackSnapshot = usePlayerStore((state) => state.setPlaybackSnapshot);
   const playbackSource = usePlayerStore((state) => state.playbackSource);
   const storeTrack = usePlayerStore((state) => state.currentTrack);
+  const storeSavedTime = usePlayerStore((state) => state.savedTime);
+  const setSavedTime = usePlayerStore((state) => state.setSavedTime);
   const setPlaybackSource = usePlayerStore((state) => state.setPlaybackSource);
   const setStoreVolume = usePlayerStore((state) => state.setVolume);
   const setStoreProgress = usePlayerStore((state) => state.setProgress);
@@ -184,6 +115,7 @@ function PlayerBar() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const rootRef = useRef<HTMLDivElement | null>(null);
   const previousVolumeRef = useRef(0.8);
+  const saveTimeThrottleRef = useRef<number>(0); // last saved timestamp
 
   const [playOrder, setPlayOrder] = useState<number[]>(() => createRandomOrder(sampleQueue.length));
   const [orderPosition, setOrderPosition] = useState(0);
@@ -205,10 +137,75 @@ function PlayerBar() {
   );
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  const trackIndex = playOrder[orderPosition] ?? 0;
-  const currentTrack = useMemo(() => sampleQueue[trackIndex] ?? sampleQueue[0], [trackIndex]);
-  const displayTrack =
-    playbackSource === 'external' && storeTrack ? { ...currentTrack, ...storeTrack } : currentTrack;
+  // ── Artist name resolution ──────────────────────────────────────────────────
+  // When the persisted/current track has no artist string, look it up via API.
+  const [resolvedArtist, setResolvedArtist] = useState('');
+  const [resolvedArtistId, setResolvedArtistId] = useState('');
+  const resolvedArtistCacheRef = useRef<Record<string, { name: string; id: string }>>({}); 
+
+  const trackIndex = useMemo(() => playOrder[orderPosition] ?? 0, [playOrder, orderPosition]);
+  const currentTrack = useMemo(() => sampleQueue[trackIndex] ?? sampleQueue[0] ?? null, [trackIndex]);
+  const baseTrack = (playbackSource === 'external' && storeTrack) ? storeTrack : (currentTrack ?? storeTrack);
+  
+  const displayTrack = baseTrack
+    ? { ...baseTrack, lyrics: (baseTrack as any).lyrics || [] }
+    : {
+        id: '',
+        title: t('layout.workspace.rightPanel.noTrack'),
+        artist: '',
+        cover: 'https://ui-avatars.com/api/?name=No+Track&background=random',
+        src: '',
+        lyrics: [],
+      };
+
+  // Resolve artist name from API when it's not yet stored on the track
+  // Flow: GET /songs/{id} → albumId → GET /albums/{albumId} → { artistName, artistId }
+  useEffect(() => {
+    const trackId = displayTrack.id;
+    const existingAlbumId = (displayTrack as any).albumId as string | undefined;
+    if (!trackId || displayTrack.artist) {
+      setResolvedArtist('');
+      setResolvedArtistId('');
+      return;
+    }
+    if (resolvedArtistCacheRef.current[trackId]) {
+      const cached = resolvedArtistCacheRef.current[trackId];
+      setResolvedArtist(cached.name);
+      setResolvedArtistId(cached.id);
+      return;
+    }
+    setResolvedArtist('');
+    setResolvedArtistId('');
+
+    let cancelled = false;
+    const resolve = async () => {
+      try {
+        let albumId = existingAlbumId;
+
+        // Step 1: If we don't have albumId, fetch the song to get it
+        if (!albumId) {
+          const songRes = await api.get(endpoints.song.details(trackId));
+          albumId = songRes.data?.albumId;
+        }
+
+        // Step 2: Fetch album to get artistName & artistId
+        if (albumId) {
+          const albumRes = await api.get(endpoints.album.details(albumId));
+          const name: string = albumRes.data?.artistName || '';
+          const artId: string = albumRes.data?.artistId || '';
+          if (name && !cancelled) {
+            resolvedArtistCacheRef.current[trackId] = { name, id: artId };
+            setResolvedArtist(name);
+            setResolvedArtistId(artId);
+          }
+        }
+      } catch {
+        // silently ignore — player must not crash on network errors
+      }
+    };
+    void resolve();
+    return () => { cancelled = true; };
+  }, [displayTrack.id, displayTrack.artist, (displayTrack as any).albumId]);
 
   const likedSongs = useLibraryStore((state) => state.likedSongs);
   const toggleLikedSong = useLibraryStore((state) => state.toggleLikedSong);
@@ -493,6 +490,34 @@ function PlayerBar() {
     setDuration(0);
   }, [displayTrack.src]);
 
+  // Restore playback position after metadata is ready (only once per src load)
+  const restoredRef = useRef<string>('');
+  const handleLoadedMetadata = (event: React.SyntheticEvent<HTMLAudioElement>) => {
+    const audio = event.currentTarget;
+    const dur = audio.duration || 0;
+    setDuration(dur);
+    // Only seek to savedTime on the initial load of this src (not after a manual seek)
+    if (storeSavedTime > 0 && restoredRef.current !== displayTrack.src) {
+      restoredRef.current = displayTrack.src ?? '';
+      const seekTo = Math.min(storeSavedTime, dur - 1);
+      if (seekTo > 0) {
+        audio.currentTime = seekTo;
+        setCurrentTime(seekTo);
+      }
+    }
+  };
+
+  const handleTimeUpdate = (event: React.SyntheticEvent<HTMLAudioElement>) => {
+    const ct = event.currentTarget.currentTime;
+    setCurrentTime(ct);
+    // Throttle: save to store at most every 5 seconds
+    const now = Date.now();
+    if (now - saveTimeThrottleRef.current >= 5000) {
+      saveTimeThrottleRef.current = now;
+      setSavedTime(ct);
+    }
+  };
+
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) {
@@ -529,12 +554,13 @@ function PlayerBar() {
   }, []);
 
   useEffect(() => {
-    if (typeof document === 'undefined') {
+    if (typeof document === 'undefined' || !displayTrack?.title) {
       return;
     }
 
-    document.title = `${displayTrack.title} • ${displayTrack.artist} - Spotify`;
-  }, [displayTrack.artist, displayTrack.title]);
+    const artistLabel = displayTrack.artist || resolvedArtist;
+    document.title = `${displayTrack.title}${artistLabel ? ` • ${artistLabel}` : ''} - Spotify`;
+  }, [displayTrack?.artist, displayTrack?.title, resolvedArtist]);
 
   useEffect(() => {
     if (!isQueueOpen && !isLyricsOpen && !isDeviceMenuOpen) {
@@ -570,6 +596,10 @@ function PlayerBar() {
 
   useEffect(() => {
     if (playbackSource === 'external') {
+      return;
+    }
+
+    if (!currentTrack) {
       return;
     }
 
@@ -617,8 +647,8 @@ function PlayerBar() {
         src={displayTrack.src}
         onPlay={() => setIsPlaying(true)}
         onPause={() => setIsPlaying(false)}
-        onLoadedMetadata={(event) => setDuration(event.currentTarget.duration || 0)}
-        onTimeUpdate={(event) => setCurrentTime(event.currentTarget.currentTime)}
+        onLoadedMetadata={handleLoadedMetadata}
+        onTimeUpdate={handleTimeUpdate}
         onEnded={handleAudioEnded}
       />
 
@@ -629,7 +659,7 @@ function PlayerBar() {
           </div>
           <h4 className="mb-2 text-lg font-semibold text-zinc-100">{displayTrack.title}</h4>
           <div className="space-y-1 text-sm leading-6 text-zinc-300">
-            {currentTrack.lyrics.map((line) => (
+            {displayTrack.lyrics?.map((line: string) => (
               <p key={line}>{line}</p>
             ))}
           </div>
@@ -704,28 +734,32 @@ function PlayerBar() {
             className="h-14 w-14 rounded object-cover"
             loading="lazy"
           />
-          <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-zinc-100">
-              <Link to={`/track/${displayTrack.id}`} className="hover:underline">
-                {displayTrack.title}
-              </Link>
+          <div className="min-w-0 flex flex-col justify-center">
+            <p className={`truncate text-sm font-semibold leading-tight ${displayTrack.id ? 'text-zinc-100' : 'text-zinc-400'}`}>
+              {displayTrack.id ? (
+                <Link to={`/track/${displayTrack.id}`} className="hover:underline">
+                  {displayTrack.title}
+                </Link>
+              ) : (
+                displayTrack.title
+              )}
             </p>
-            <p className="truncate text-sm text-zinc-400">
-              {(() => {
-                const dataTrack = spotifyData.tracks.find((t: any) => t.id === displayTrack.id);
-                const artistId = dataTrack?.artist_ids[0];
-                return artistId ? (
+            {(displayTrack.artist || resolvedArtist) && (
+              <p className="truncate text-xs text-zinc-400 mt-0.5">
+                {resolvedArtistId ? (
                   <Link
-                    to={`/artist/${artistId}`}
-                    className="hover:underline hover:text-white transition-colors"
+                    to={`/artist/${resolvedArtistId}`}
+                    className="hover:underline hover:text-zinc-200 transition-colors"
                   >
-                    {displayTrack.artist}
+                    {displayTrack.artist || resolvedArtist}
                   </Link>
                 ) : (
-                  <span>{displayTrack.artist}</span>
-                );
-              })()}
-            </p>
+                  <span className="hover:text-zinc-200 transition-colors">
+                    {displayTrack.artist || resolvedArtist}
+                  </span>
+                )}
+              </p>
+            )}
           </div>
           <button
             type="button"
