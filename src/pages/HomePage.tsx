@@ -1,18 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable react-hooks/exhaustive-deps */
-/* eslint-disable react-hooks/set-state-in-effect */
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type MouseEvent,
-  type MutableRefObject,
-} from 'react';
+
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { NavLink } from 'react-router-dom';
 import { getLibraryItemRoute, normalizeApiAssetUrl } from '@/helpers/helper';
+import { DragScroll } from '@/shared/components/DragScroll';
 import { NowPlayingEqualizer } from '@/shared/components/NowPlayingEqualizer';
 import { usePlayerStore } from '@/store/playerStore';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -126,177 +118,11 @@ const homeFooterLegalLinkKeys = [
   'homePage.footer.legal.items.accessibility',
 ] as const;
 
-type CarouselControls = {
-  scrollerRef: MutableRefObject<HTMLDivElement | null>;
-  handlePrev: () => void;
-  handleNext: () => void;
-  handleMouseMove: (event: MouseEvent<HTMLDivElement>) => void;
-  handleMouseLeave: () => void;
-  showLeftControl: boolean;
-  showRightControl: boolean;
-};
-
-const useCarouselControls = (): CarouselControls => {
-  const scrollerRef = useRef<HTMLDivElement | null>(null);
-  const [hoverEdge, setHoverEdge] = useState<'left' | 'right' | null>(null);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(false);
-
-  const updateScrollState = useCallback(() => {
-    const scroller = scrollerRef.current;
-
-    if (!scroller) {
-      setCanScrollLeft(false);
-      setCanScrollRight(false);
-      return;
-    }
-
-    const hasOverflow = scroller.scrollWidth > scroller.clientWidth + 1;
-    const hasMoreOnLeft = scroller.scrollLeft > 1;
-    const hasMoreOnRight = scroller.scrollLeft + scroller.clientWidth < scroller.scrollWidth - 1;
-
-    setCanScrollLeft(hasOverflow && hasMoreOnLeft);
-    setCanScrollRight(hasOverflow && hasMoreOnRight);
-  }, []);
-
-  useEffect(() => {
-    updateScrollState();
-
-    const scroller = scrollerRef.current;
-
-    if (!scroller) {
-      return;
-    }
-
-    const handleScroll = () => updateScrollState();
-
-    scroller.addEventListener('scroll', handleScroll, { passive: true });
-    window.addEventListener('resize', updateScrollState);
-
-    return () => {
-      scroller.removeEventListener('scroll', handleScroll);
-      window.removeEventListener('resize', updateScrollState);
-    };
-  }, [updateScrollState]);
-
-  const handleNext = () => {
-    const scroller = scrollerRef.current;
-
-    if (!scroller) {
-      return;
-    }
-
-    scroller.scrollBy({
-      left: Math.max(280, Math.round(scroller.clientWidth * 0.72)),
-      behavior: 'smooth',
-    });
-  };
-
-  const handlePrev = () => {
-    const scroller = scrollerRef.current;
-
-    if (!scroller) {
-      return;
-    }
-
-    scroller.scrollBy({
-      left: -Math.max(280, Math.round(scroller.clientWidth * 0.72)),
-      behavior: 'smooth',
-    });
-  };
-
-  const handleMouseMove = (event: MouseEvent<HTMLDivElement>) => {
-    const rect = event.currentTarget.getBoundingClientRect();
-    const cursorX = event.clientX - rect.left;
-    const edgeThreshold = Math.min(96, rect.width * 0.16);
-
-    if (cursorX <= edgeThreshold) {
-      setHoverEdge('left');
-      return;
-    }
-
-    if (cursorX >= rect.width - edgeThreshold) {
-      setHoverEdge('right');
-      return;
-    }
-
-    setHoverEdge(null);
-  };
-
-  const handleMouseLeave = () => {
-    setHoverEdge(null);
-  };
-
-  return {
-    scrollerRef,
-    handlePrev,
-    handleNext,
-    handleMouseMove,
-    handleMouseLeave,
-    showLeftControl: canScrollLeft && hoverEdge === 'left',
-    showRightControl: canScrollRight && hoverEdge === 'right',
-  };
-};
-
-const CarouselEdgeControls = ({
-  controls,
-  t,
-}: {
-  controls: CarouselControls;
-  t: (key: string) => string;
-}) => (
-  <>
-    {controls.showLeftControl && (
-      <>
-        <div className="pointer-events-none absolute inset-y-0 left-0 w-16 bg-gradient-to-r from-zinc-950 via-zinc-950/75 to-transparent" />
-        <button
-          type="button"
-          onClick={controls.handlePrev}
-          aria-label={t('homePage.carousel.previous')}
-          className="absolute left-2 top-1/2 z-10 inline-flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-zinc-800/90 text-zinc-100 shadow-lg shadow-black/60 transition hover:scale-105 hover:bg-zinc-700"
-        >
-          <svg viewBox="0 0 24 24" className="h-5 w-5 rotate-180 fill-current" aria-hidden="true">
-            <path d="m7.05 3.606 13.49 7.788a.7.7 0 0 1 0 1.212L7.05 20.394A.7.7 0 0 1 6 19.788V4.212a.7.7 0 0 1 1.05-.606"></path>
-          </svg>
-        </button>
-      </>
-    )}
-
-    {controls.showRightControl && (
-      <>
-        <div className="pointer-events-none absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-zinc-950 via-zinc-950/75 to-transparent" />
-        <button
-          type="button"
-          onClick={controls.handleNext}
-          aria-label={t('homePage.carousel.next')}
-          className="absolute right-2 top-1/2 z-10 inline-flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-zinc-800/90 text-zinc-100 shadow-lg shadow-black/60 transition hover:scale-105 hover:bg-zinc-700"
-        >
-          <svg viewBox="0 0 24 24" className="h-5 w-5 fill-current" aria-hidden="true">
-            <path d="m7.05 3.606 13.49 7.788a.7.7 0 0 1 0 1.212L7.05 20.394A.7.7 0 0 1 6 19.788V4.212a.7.7 0 0 1 1.05-.606"></path>
-          </svg>
-        </button>
-      </>
-    )}
-  </>
-);
-
 function HomePage() {
   const { t } = useTranslation();
   const authUser = useAuthStore((state) => state.user);
   const userName = authUser?.name || authUser?.username || 'User';
   const [activeFilter, setActiveFilter] = useState<'all' | 'music' | 'podcasts'>('all');
-  const madeForCarousel = useCarouselControls();
-  const albumsCarousel = useCarouselControls();
-  const songsCarousel = useCarouselControls();
-  const jumpBackInCarousel = useCarouselControls();
-  const recentlyPlayedCarousel = useCarouselControls();
-  const topMixesCarousel = useCarouselControls();
-  const favoriteArtistsCarousel = useCarouselControls();
-  const moreLikeCarousel = useCarouselControls();
-  const recommendedStationsCarousel = useCarouselControls();
-  const episodesCarousel = useCarouselControls();
-  const popularRadioCarousel = useCarouselControls();
-  const yourPlaylistsCarousel = useCarouselControls();
   const currentTrack = usePlayerStore((state) => state.currentTrack);
   const isPlaying = usePlayerStore((state) => state.isPlaying);
   const setTrack = usePlayerStore((state) => state.setTrack);
@@ -316,19 +142,18 @@ function HomePage() {
   const [songsError, setSongsError] = useState<string | null>(null);
 
   useEffect(() => {
-    setIsArtistsLoading(true);
-    setArtistsError(null);
-    api.get('/artists')
+    api
+      .get('/artists')
       .then((res: any) => {
         const raw = res.data;
-        const artists = Array.isArray(raw)
-          ? raw
-          : raw?.content || raw?.artists || raw?.data || [];
+        const artists = Array.isArray(raw) ? raw : raw?.content || raw?.artists || raw?.data || [];
         const formatted = artists.map((artist: any) => ({
           id: `artist-${artist.id}`,
           title: artist.name,
           subtitle: artist.bio || (artist.genres?.length ? artist.genres[0] : 'Artist'),
-          image: normalizeApiAssetUrl(artist.imageUrl || artist.picture || artist.images?.[0]?.url) || `https://ui-avatars.com/api/?name=${encodeURIComponent(artist.name)}&background=random`,
+          image:
+            normalizeApiAssetUrl(artist.imageUrl || artist.picture || artist.images?.[0]?.url) ||
+            `https://ui-avatars.com/api/?name=${encodeURIComponent(artist.name)}&background=random`,
           to: `/artist/${artist.id}`,
           shape: 'circle' as const,
         }));
@@ -348,11 +173,6 @@ function HomePage() {
         setIsArtistsLoading(false);
       });
 
-    setIsAlbumsLoading(true);
-    setAlbumsError(null);
-    setIsSongsLoading(true);
-    setSongsError(null);
-
     Promise.all([
       api.get('/albums').catch((err: any) => {
         console.error('Failed to fetch albums:', err);
@@ -361,7 +181,7 @@ function HomePage() {
         setAlbumsError(
           status
             ? `Albums yuklenemedi. HTTP ${status}${message ? `: ${message}` : ''}`
-            : `Albums yuklenemedi.${message ? ` ${message}` : ''}`
+            : `Albums yuklenemedi.${message ? ` ${message}` : ''}`,
         );
         return { data: [] };
       }),
@@ -372,31 +192,44 @@ function HomePage() {
         setSongsError(
           status
             ? `Songs yuklenemedi. HTTP ${status}${message ? `: ${message}` : ''}`
-            : `Songs yuklenemedi.${message ? ` ${message}` : ''}`
+            : `Songs yuklenemedi.${message ? ` ${message}` : ''}`,
         );
         return { data: [] };
-      })
+      }),
     ]).then(([albumsRes, songsRes]) => {
       const rawAlbums = albumsRes.data;
-      const albums = Array.isArray(rawAlbums) ? rawAlbums : rawAlbums?.content || rawAlbums?.albums || rawAlbums?.data || [];
-      
+      const albums = Array.isArray(rawAlbums)
+        ? rawAlbums
+        : rawAlbums?.content || rawAlbums?.albums || rawAlbums?.data || [];
+
       const formattedAlbums = albums.map((album: any) => ({
         id: `album-${album.id}`,
         title: album.title || album.name,
         subtitle: album.releaseYear ? `Album • ${album.releaseYear}` : 'Album',
-        image: normalizeApiAssetUrl(album.coverImageUrl || album.images?.[0]?.url) || `https://picsum.photos/seed/album-${album.id}/640/640`,
+        image:
+          normalizeApiAssetUrl(album.coverImageUrl || album.images?.[0]?.url) ||
+          `https://picsum.photos/seed/album-${album.id}/640/640`,
         to: `/album/${album.id}`,
       }));
       setMadeForAlbumCards(formattedAlbums);
       setIsAlbumsLoading(false);
 
       const rawSongs = songsRes.data;
-      const songs = Array.isArray(rawSongs) ? rawSongs : rawSongs?.content || rawSongs?.songs || rawSongs?.data || [];
-      
+      const songs = Array.isArray(rawSongs)
+        ? rawSongs
+        : rawSongs?.content || rawSongs?.songs || rawSongs?.data || [];
+
       const formattedSongs = songs.map((song: any) => {
-        const albumForSong = albums.find((a: any) => a.id === song.albumId || a.id === song.album_id);
-        const albumImage = albumForSong ? normalizeApiAssetUrl(albumForSong.coverImageUrl || albumForSong.images?.[0]?.url) : null;
-        const songImage = normalizeApiAssetUrl(song.coverImageUrl || song.imageUrl || song.images?.[0]?.url) || albumImage || `https://picsum.photos/seed/song-${song.id}/640/640`;
+        const albumForSong = albums.find(
+          (a: any) => a.id === song.albumId || a.id === song.album_id,
+        );
+        const albumImage = albumForSong
+          ? normalizeApiAssetUrl(albumForSong.coverImageUrl || albumForSong.images?.[0]?.url)
+          : null;
+        const songImage =
+          normalizeApiAssetUrl(song.coverImageUrl || song.imageUrl || song.images?.[0]?.url) ||
+          albumImage ||
+          `https://picsum.photos/seed/song-${song.id}/640/640`;
 
         return {
           id: `song-${song.id}`,
@@ -460,7 +293,9 @@ function HomePage() {
     const pbContext = usePlayerStore.getState().playbackContext;
 
     if (item.type === 'artist') {
-      const artist = spotifyData.artists.find((a: any) => a.name === item.title || a.id === item.id);
+      const artist = spotifyData.artists.find(
+        (a: any) => a.name === item.title || a.id === item.id,
+      );
       if (!artist) return;
 
       // If already playing from this artist, toggle
@@ -593,7 +428,8 @@ function HomePage() {
     return `${typeLabel} . ${suffix}`;
   };
 
-  const shouldShowAlbumShelf = isAlbumsLoading || Boolean(albumsError) || madeForAlbumCards.length > 0;
+  const shouldShowAlbumShelf =
+    isAlbumsLoading || Boolean(albumsError) || madeForAlbumCards.length > 0;
   const shouldShowSongShelf = isSongsLoading || Boolean(songsError) || madeForSongCards.length > 0;
 
   return (
@@ -787,29 +623,28 @@ function HomePage() {
           </button>
         </div>
 
-        <div
-          className="relative"
-          onMouseMove={madeForCarousel.handleMouseMove}
-          onMouseLeave={madeForCarousel.handleMouseLeave}
+        <DragScroll
+          previousLabel={t('homePage.carousel.previous')}
+          nextLabel={t('homePage.carousel.next')}
+          className="flex gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
-          <div
-            ref={madeForCarousel.scrollerRef}
-            className="flex gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          >
-            {isArtistsLoading ? (
-              <div className="flex w-full items-center justify-center py-10 text-zinc-400">
-                <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-500 border-t-emerald-500" />
-              </div>
-            ) : artistsError ? (
-              <div className="flex w-full items-center justify-center py-10 text-zinc-400">
-                {artistsError}
-              </div>
-            ) : madeForCards.length === 0 ? (
-              <div className="flex w-full items-center justify-center py-10 text-zinc-400" id="artist-check">
-                No artists found.
-              </div>
-            ) : (
-              madeForCards.map((card) => {
+          {isArtistsLoading ? (
+            <div className="flex w-full items-center justify-center py-10 text-zinc-400">
+              <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-500 border-t-emerald-500" />
+            </div>
+          ) : artistsError ? (
+            <div className="flex w-full items-center justify-center py-10 text-zinc-400">
+              {artistsError}
+            </div>
+          ) : madeForCards.length === 0 ? (
+            <div
+              className="flex w-full items-center justify-center py-10 text-zinc-400"
+              id="artist-check"
+            >
+              No artists found.
+            </div>
+          ) : (
+            madeForCards.map((card) => {
               const isNowPlayingCard = isShelfCardNowPlaying(card);
 
               return (
@@ -839,7 +674,7 @@ function HomePage() {
                           <NowPlayingEqualizer className="h-5 w-5" />
                         </span>
                       ) : (
-                        <button type="button" onClick={(e) => handleCardPlayClick(e, card)} className="inline-flex h-12 w-12 translate-y-2 items-center justify-center rounded-full bg-emerald-500 text-black opacity-0 shadow-2xl shadow-black/60 transition-all duration-200 group-hover/card:translate-y-0 group-hover/card:opacity-100">
+                        <span className="inline-flex h-12 w-12 translate-y-2 items-center justify-center rounded-full bg-emerald-500 text-black opacity-0 shadow-2xl shadow-black/60 transition-all duration-200 group-hover/card:translate-y-0 group-hover/card:opacity-100">
                           <svg
                             viewBox="0 0 24 24"
                             className="h-6 w-6 fill-current"
@@ -847,7 +682,7 @@ function HomePage() {
                           >
                             <path d="m7.05 3.606 13.49 7.788a.7.7 0 0 1 0 1.212L7.05 20.394A.7.7 0 0 1 6 19.788V4.212a.7.7 0 0 1 1.05-.606"></path>
                           </svg>
-                        </button>
+                        </span>
                       )}
                     </div>
                   </div>
@@ -860,33 +695,28 @@ function HomePage() {
                   <p className="mt-1 line-clamp-2 text-sm text-zinc-400">{card.subtitle}</p>
                 </NavLink>
               );
-              })
-            )}
-          </div>
-
-          <CarouselEdgeControls controls={madeForCarousel} t={t} />
-        </div>
+            })
+          )}
+        </DragScroll>
       </section>
 
       {/* Popular Albums Shelf */}
       {shouldShowAlbumShelf && (
-      <section className="mt-10">
-        <div className="mb-4 flex items-end justify-between">
-          <div>
-            <h3 className="text-2xl font-black leading-none tracking-tight">{t('homePage.sections.popularAlbums')}</h3>
+        <section className="mt-10">
+          <div className="mb-4 flex items-end justify-between">
+            <div>
+              <h3 className="text-2xl font-black leading-none tracking-tight">
+                {t('homePage.sections.popularAlbums')}
+              </h3>
+            </div>
+            <button className="text-sm font-semibold text-zinc-300 transition hover:text-zinc-100">
+              {t('common.actions.showAll')}
+            </button>
           </div>
-          <button className="text-sm font-semibold text-zinc-300 transition hover:text-zinc-100">
-            {t('common.actions.showAll')}
-          </button>
-        </div>
 
-        <div
-          className="relative"
-          onMouseMove={albumsCarousel.handleMouseMove}
-          onMouseLeave={albumsCarousel.handleMouseLeave}
-        >
-          <div
-            ref={albumsCarousel.scrollerRef}
+          <DragScroll
+            previousLabel={t('homePage.carousel.previous')}
+            nextLabel={t('homePage.carousel.next')}
             className="flex gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
             {isAlbumsLoading ? (
@@ -949,31 +779,27 @@ function HomePage() {
                 );
               })
             )}
-          </div>
-          <CarouselEdgeControls controls={albumsCarousel} t={t} />
-        </div>
-      </section>
+          </DragScroll>
+        </section>
       )}
 
       {/* Popular Songs Shelf */}
       {shouldShowSongShelf && (
-      <section className="mt-10">
-        <div className="mb-4 flex items-end justify-between">
-          <div>
-            <h3 className="text-2xl font-black leading-none tracking-tight">{t('homePage.sections.popularSongs')}</h3>
+        <section className="mt-10">
+          <div className="mb-4 flex items-end justify-between">
+            <div>
+              <h3 className="text-2xl font-black leading-none tracking-tight">
+                {t('homePage.sections.popularSongs')}
+              </h3>
+            </div>
+            <button className="text-sm font-semibold text-zinc-300 transition hover:text-zinc-100">
+              {t('common.actions.showAll')}
+            </button>
           </div>
-          <button className="text-sm font-semibold text-zinc-300 transition hover:text-zinc-100">
-            {t('common.actions.showAll')}
-          </button>
-        </div>
 
-        <div
-          className="relative"
-          onMouseMove={songsCarousel.handleMouseMove}
-          onMouseLeave={songsCarousel.handleMouseLeave}
-        >
-          <div
-            ref={songsCarousel.scrollerRef}
+          <DragScroll
+            previousLabel={t('homePage.carousel.previous')}
+            nextLabel={t('homePage.carousel.next')}
             className="flex gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
             {isSongsLoading ? (
@@ -1036,11 +862,8 @@ function HomePage() {
                 );
               })
             )}
-          </div>
-
-          <CarouselEdgeControls controls={songsCarousel} t={t} />
-        </div>
-      </section>
+          </DragScroll>
+        </section>
       )}
 
       <section className="mt-12">
@@ -1053,69 +876,62 @@ function HomePage() {
           </button>
         </div>
 
-        <div
-          className="relative"
-          onMouseMove={jumpBackInCarousel.handleMouseMove}
-          onMouseLeave={jumpBackInCarousel.handleMouseLeave}
+        <DragScroll
+          previousLabel={t('homePage.carousel.previous')}
+          nextLabel={t('homePage.carousel.next')}
+          className="flex gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
-          <div
-            ref={jumpBackInCarousel.scrollerRef}
-            className="flex gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          >
-            {jumpBackInCards.map((card) => {
-              const isNowPlayingCard = isShelfCardNowPlaying(card);
+          {jumpBackInCards.map((card) => {
+            const isNowPlayingCard = isShelfCardNowPlaying(card);
 
-              return (
-                <NavLink
-                  key={card.id}
-                  to={card.to}
-                  className="group relative w-[220px] min-w-[220px] rounded-xl bg-zinc-900/75 p-3 transition hover:bg-zinc-800/85"
+            return (
+              <NavLink
+                key={card.id}
+                to={card.to}
+                className="group relative w-[220px] min-w-[220px] rounded-xl bg-zinc-900/75 p-3 transition hover:bg-zinc-800/85"
+              >
+                <div
+                  className={`relative mb-3 aspect-square ${
+                    card.shape === 'circle' ? '' : 'overflow-hidden rounded-lg'
+                  }`}
                 >
-                  <div
-                    className={`relative mb-3 aspect-square ${
-                      card.shape === 'circle' ? '' : 'overflow-hidden rounded-lg'
-                    }`}
-                  >
-                    <img
-                      src={card.image}
-                      alt={card.title}
-                      className={`h-full w-full object-cover ${card.shape === 'circle' ? 'rounded-full' : ''}`}
-                      loading="lazy"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent" />
+                  <img
+                    src={card.image}
+                    alt={card.title}
+                    className={`h-full w-full object-cover ${card.shape === 'circle' ? 'rounded-full' : ''}`}
+                    loading="lazy"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent" />
 
-                    <div className="absolute bottom-6 right-6">
-                      {isNowPlayingCard ? (
-                        <span className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-black/65 ring-1 ring-white/15">
-                          <NowPlayingEqualizer className="h-5 w-5" />
-                        </span>
-                      ) : (
-                        <button type="button" onClick={(e) => handleCardPlayClick(e, card)} className="inline-flex h-12 w-12 translate-y-2 items-center justify-center rounded-full bg-emerald-500 text-black opacity-0 shadow-2xl shadow-black/60 transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100">
-                          <svg
-                            viewBox="0 0 24 24"
-                            className="h-6 w-6 fill-current"
-                            aria-hidden="true"
-                          >
-                            <path d="m7.05 3.606 13.49 7.788a.7.7 0 0 1 0 1.212L7.05 20.394A.7.7 0 0 1 6 19.788V4.212a.7.7 0 0 1 1.05-.606"></path>
-                          </svg>
-                        </button>
-                      )}
-                    </div>
+                  <div className="absolute bottom-6 right-6">
+                    {isNowPlayingCard ? (
+                      <span className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-black/65 ring-1 ring-white/15">
+                        <NowPlayingEqualizer className="h-5 w-5" />
+                      </span>
+                    ) : (
+                      <span className="inline-flex h-12 w-12 translate-y-2 items-center justify-center rounded-full bg-emerald-500 text-black opacity-0 shadow-2xl shadow-black/60 transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100">
+                        <svg
+                          viewBox="0 0 24 24"
+                          className="h-6 w-6 fill-current"
+                          aria-hidden="true"
+                        >
+                          <path d="m7.05 3.606 13.49 7.788a.7.7 0 0 1 0 1.212L7.05 20.394A.7.7 0 0 1 6 19.788V4.212a.7.7 0 0 1 1.05-.606"></path>
+                        </svg>
+                      </span>
+                    )}
                   </div>
+                </div>
 
-                  <p
-                    className={`line-clamp-1 text-base font-semibold ${isNowPlayingCard ? 'text-emerald-400' : 'text-zinc-100'}`}
-                  >
-                    {card.title}
-                  </p>
-                  <p className="mt-1 line-clamp-2 text-sm text-zinc-400">{card.subtitle}</p>
-                </NavLink>
-              );
-            })}
-          </div>
-
-          <CarouselEdgeControls controls={jumpBackInCarousel} t={t} />
-        </div>
+                <p
+                  className={`line-clamp-1 text-base font-semibold ${isNowPlayingCard ? 'text-emerald-400' : 'text-zinc-100'}`}
+                >
+                  {card.title}
+                </p>
+                <p className="mt-1 line-clamp-2 text-sm text-zinc-400">{card.subtitle}</p>
+              </NavLink>
+            );
+          })}
+        </DragScroll>
       </section>
 
       <section className="mt-14">
@@ -1128,68 +944,61 @@ function HomePage() {
           </button>
         </div>
 
-        <div
-          className="relative"
-          onMouseMove={recentlyPlayedCarousel.handleMouseMove}
-          onMouseLeave={recentlyPlayedCarousel.handleMouseLeave}
+        <DragScroll
+          previousLabel={t('homePage.carousel.previous')}
+          nextLabel={t('homePage.carousel.next')}
+          className="flex gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
-          <div
-            ref={recentlyPlayedCarousel.scrollerRef}
-            className="flex gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          >
-            {recentlyPlayedCards.map((card) => {
-              const isNowPlayingCard = isShelfCardNowPlaying(card);
+          {recentlyPlayedCards.map((card) => {
+            const isNowPlayingCard = isShelfCardNowPlaying(card);
 
-              return (
-                <NavLink
-                  key={card.id}
-                  to={card.to}
-                  className="group relative w-[220px] min-w-[220px] rounded-xl bg-zinc-900/75 p-3 transition hover:bg-zinc-800/85"
+            return (
+              <NavLink
+                key={card.id}
+                to={card.to}
+                className="group relative w-[220px] min-w-[220px] rounded-xl bg-zinc-900/75 p-3 transition hover:bg-zinc-800/85"
+              >
+                <div
+                  className={`relative mb-3 aspect-square ${
+                    card.shape === 'circle' ? '' : 'overflow-hidden rounded-lg'
+                  }`}
                 >
-                  <div
-                    className={`relative mb-3 aspect-square ${
-                      card.shape === 'circle' ? '' : 'overflow-hidden rounded-lg'
-                    }`}
-                  >
-                    <img
-                      src={card.image}
-                      alt={card.title}
-                      className={`h-full w-full object-cover ${card.shape === 'circle' ? 'rounded-full' : ''}`}
-                      loading="lazy"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent" />
+                  <img
+                    src={card.image}
+                    alt={card.title}
+                    className={`h-full w-full object-cover ${card.shape === 'circle' ? 'rounded-full' : ''}`}
+                    loading="lazy"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent" />
 
-                    <div className="absolute bottom-6 right-6">
-                      {isNowPlayingCard ? (
-                        <span className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-black/65 ring-1 ring-white/15">
-                          <NowPlayingEqualizer className="h-5 w-5" />
-                        </span>
-                      ) : (
-                        <button type="button" onClick={(e) => handleCardPlayClick(e, card)} className="inline-flex h-12 w-12 translate-y-2 items-center justify-center rounded-full bg-emerald-500 text-black opacity-0 shadow-2xl shadow-black/60 transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100">
-                          <svg
-                            viewBox="0 0 24 24"
-                            className="h-6 w-6 fill-current"
-                            aria-hidden="true"
-                          >
-                            <path d="m7.05 3.606 13.49 7.788a.7.7 0 0 1 0 1.212L7.05 20.394A.7.7 0 0 1 6 19.788V4.212a.7.7 0 0 1 1.05-.606"></path>
-                          </svg>
-                        </button>
-                      )}
-                    </div>
+                  <div className="absolute bottom-6 right-6">
+                    {isNowPlayingCard ? (
+                      <span className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-black/65 ring-1 ring-white/15">
+                        <NowPlayingEqualizer className="h-5 w-5" />
+                      </span>
+                    ) : (
+                      <span className="inline-flex h-12 w-12 translate-y-2 items-center justify-center rounded-full bg-emerald-500 text-black opacity-0 shadow-2xl shadow-black/60 transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100">
+                        <svg
+                          viewBox="0 0 24 24"
+                          className="h-6 w-6 fill-current"
+                          aria-hidden="true"
+                        >
+                          <path d="m7.05 3.606 13.49 7.788a.7.7 0 0 1 0 1.212L7.05 20.394A.7.7 0 0 1 6 19.788V4.212a.7.7 0 0 1 1.05-.606"></path>
+                        </svg>
+                      </span>
+                    )}
                   </div>
+                </div>
 
-                  <p
-                    className={`line-clamp-2 text-base font-semibold ${isNowPlayingCard ? 'text-emerald-400' : 'text-zinc-100'}`}
-                  >
-                    {card.title}
-                  </p>
-                </NavLink>
-              );
-            })}
-          </div>
-
-          <CarouselEdgeControls controls={recentlyPlayedCarousel} t={t} />
-        </div>
+                <p
+                  className={`line-clamp-2 text-base font-semibold ${isNowPlayingCard ? 'text-emerald-400' : 'text-zinc-100'}`}
+                >
+                  {card.title}
+                </p>
+              </NavLink>
+            );
+          })}
+        </DragScroll>
       </section>
 
       <section className="mt-12">
@@ -1200,75 +1009,68 @@ function HomePage() {
           </button>
         </div>
 
-        <div
-          className="relative"
-          onMouseMove={topMixesCarousel.handleMouseMove}
-          onMouseLeave={topMixesCarousel.handleMouseLeave}
+        <DragScroll
+          previousLabel={t('homePage.carousel.previous')}
+          nextLabel={t('homePage.carousel.next')}
+          className="flex gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
-          <div
-            ref={topMixesCarousel.scrollerRef}
-            className="flex gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          >
-            {topMixCards.map((card) => {
-              const isNowPlayingCard = isShelfCardNowPlaying(card);
+          {topMixCards.map((card) => {
+            const isNowPlayingCard = isShelfCardNowPlaying(card);
 
-              return (
-                <NavLink
-                  key={card.id}
-                  to={card.to}
-                  className="group relative w-[220px] min-w-[220px] rounded-xl bg-zinc-900/75 p-3 transition hover:bg-zinc-800/85"
-                >
-                  <div className="relative mb-3 aspect-square overflow-hidden rounded-lg">
-                    <img
-                      src={card.image}
-                      alt={card.title}
-                      className="h-full w-full object-cover"
-                      loading="lazy"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent" />
+            return (
+              <NavLink
+                key={card.id}
+                to={card.to}
+                className="group relative w-[220px] min-w-[220px] rounded-xl bg-zinc-900/75 p-3 transition hover:bg-zinc-800/85"
+              >
+                <div className="relative mb-3 aspect-square overflow-hidden rounded-lg">
+                  <img
+                    src={card.image}
+                    alt={card.title}
+                    className="h-full w-full object-cover"
+                    loading="lazy"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent" />
 
-                    {card.badge && (
-                      <span
-                        className={`absolute bottom-2 left-2 rounded px-2 py-0.5 text-xs font-black tracking-wide text-black ${
-                          card.badgeClassName ?? 'bg-cyan-300/95'
-                        }`}
-                      >
-                        {card.badge}
+                  {card.badge && (
+                    <span
+                      className={`absolute bottom-2 left-2 rounded px-2 py-0.5 text-xs font-black tracking-wide text-black ${
+                        card.badgeClassName ?? 'bg-cyan-300/95'
+                      }`}
+                    >
+                      {card.badge}
+                    </span>
+                  )}
+
+                  <div className="absolute bottom-6 right-6">
+                    {isNowPlayingCard ? (
+                      <span className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-black/65 ring-1 ring-white/15">
+                        <NowPlayingEqualizer className="h-5 w-5" />
+                      </span>
+                    ) : (
+                      <span className="inline-flex h-12 w-12 translate-y-2 items-center justify-center rounded-full bg-emerald-500 text-black opacity-0 shadow-2xl shadow-black/60 transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100">
+                        <svg
+                          viewBox="0 0 24 24"
+                          className="h-6 w-6 fill-current"
+                          aria-hidden="true"
+                        >
+                          <path d="m7.05 3.606 13.49 7.788a.7.7 0 0 1 0 1.212L7.05 20.394A.7.7 0 0 1 6 19.788V4.212a.7.7 0 0 1 1.05-.606"></path>
+                        </svg>
                       </span>
                     )}
-
-                    <div className="absolute bottom-6 right-6">
-                      {isNowPlayingCard ? (
-                        <span className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-black/65 ring-1 ring-white/15">
-                          <NowPlayingEqualizer className="h-5 w-5" />
-                        </span>
-                      ) : (
-                        <button type="button" onClick={(e) => handleCardPlayClick(e, card)} className="inline-flex h-12 w-12 translate-y-2 items-center justify-center rounded-full bg-emerald-500 text-black opacity-0 shadow-2xl shadow-black/60 transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100">
-                          <svg
-                            viewBox="0 0 24 24"
-                            className="h-6 w-6 fill-current"
-                            aria-hidden="true"
-                          >
-                            <path d="m7.05 3.606 13.49 7.788a.7.7 0 0 1 0 1.212L7.05 20.394A.7.7 0 0 1 6 19.788V4.212a.7.7 0 0 1 1.05-.606"></path>
-                          </svg>
-                        </button>
-                      )}
-                    </div>
                   </div>
+                </div>
 
-                  <p
-                    className={`line-clamp-1 text-base font-semibold ${isNowPlayingCard ? 'text-emerald-400' : 'text-zinc-100'}`}
-                  >
-                    {card.title}
-                  </p>
-                  <p className="mt-1 line-clamp-2 text-sm text-zinc-400">{card.subtitle}</p>
-                </NavLink>
-              );
-            })}
-          </div>
-
-          <CarouselEdgeControls controls={topMixesCarousel} t={t} />
-        </div>
+                <p
+                  className={`line-clamp-1 text-base font-semibold ${isNowPlayingCard ? 'text-emerald-400' : 'text-zinc-100'}`}
+                >
+                  {card.title}
+                </p>
+                <p className="mt-1 line-clamp-2 text-sm text-zinc-400">{card.subtitle}</p>
+              </NavLink>
+            );
+          })}
+        </DragScroll>
       </section>
 
       <section className="mt-14">
@@ -1281,65 +1083,58 @@ function HomePage() {
           </button>
         </div>
 
-        <div
-          className="relative"
-          onMouseMove={favoriteArtistsCarousel.handleMouseMove}
-          onMouseLeave={favoriteArtistsCarousel.handleMouseLeave}
+        <DragScroll
+          previousLabel={t('homePage.carousel.previous')}
+          nextLabel={t('homePage.carousel.next')}
+          className="flex gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
-          <div
-            ref={favoriteArtistsCarousel.scrollerRef}
-            className="flex gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          >
-            {favoriteArtistCards.map((card) => {
-              const isNowPlayingCard = isShelfCardNowPlaying(card);
+          {favoriteArtistCards.map((card) => {
+            const isNowPlayingCard = isShelfCardNowPlaying(card);
 
-              return (
-                <NavLink
-                  key={card.id}
-                  to={card.to}
-                  className="group relative w-[220px] min-w-[220px] rounded-xl bg-zinc-900/75 p-3 transition hover:bg-zinc-800/85"
-                >
-                  <div className="relative mb-3 aspect-square">
-                    <img
-                      src={card.image}
-                      alt={card.title}
-                      className="h-full w-full rounded-full object-cover"
-                      loading="lazy"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent" />
+            return (
+              <NavLink
+                key={card.id}
+                to={card.to}
+                className="group relative w-[220px] min-w-[220px] rounded-xl bg-zinc-900/75 p-3 transition hover:bg-zinc-800/85"
+              >
+                <div className="relative mb-3 aspect-square">
+                  <img
+                    src={card.image}
+                    alt={card.title}
+                    className="h-full w-full rounded-full object-cover"
+                    loading="lazy"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent" />
 
-                    <div className="absolute bottom-6 right-6">
-                      {isNowPlayingCard ? (
-                        <span className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-black/65 ring-1 ring-white/15">
-                          <NowPlayingEqualizer className="h-5 w-5" />
-                        </span>
-                      ) : (
-                        <button type="button" onClick={(e) => handleCardPlayClick(e, card)} className="inline-flex h-12 w-12 translate-y-2 items-center justify-center rounded-full bg-emerald-500 text-black opacity-0 shadow-2xl shadow-black/60 transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100">
-                          <svg
-                            viewBox="0 0 24 24"
-                            className="h-6 w-6 fill-current"
-                            aria-hidden="true"
-                          >
-                            <path d="m7.05 3.606 13.49 7.788a.7.7 0 0 1 0 1.212L7.05 20.394A.7.7 0 0 1 6 19.788V4.212a.7.7 0 0 1 1.05-.606"></path>
-                          </svg>
-                        </button>
-                      )}
-                    </div>
+                  <div className="absolute bottom-6 right-6">
+                    {isNowPlayingCard ? (
+                      <span className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-black/65 ring-1 ring-white/15">
+                        <NowPlayingEqualizer className="h-5 w-5" />
+                      </span>
+                    ) : (
+                      <span className="inline-flex h-12 w-12 translate-y-2 items-center justify-center rounded-full bg-emerald-500 text-black opacity-0 shadow-2xl shadow-black/60 transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100">
+                        <svg
+                          viewBox="0 0 24 24"
+                          className="h-6 w-6 fill-current"
+                          aria-hidden="true"
+                        >
+                          <path d="m7.05 3.606 13.49 7.788a.7.7 0 0 1 0 1.212L7.05 20.394A.7.7 0 0 1 6 19.788V4.212a.7.7 0 0 1 1.05-.606"></path>
+                        </svg>
+                      </span>
+                    )}
                   </div>
+                </div>
 
-                  <p
-                    className={`line-clamp-1 text-base font-semibold ${isNowPlayingCard ? 'text-emerald-400' : 'text-zinc-100'}`}
-                  >
-                    {card.title}
-                  </p>
-                  <p className="mt-1 line-clamp-1 text-sm text-zinc-400">{card.subtitle}</p>
-                </NavLink>
-              );
-            })}
-          </div>
-
-          <CarouselEdgeControls controls={favoriteArtistsCarousel} t={t} />
-        </div>
+                <p
+                  className={`line-clamp-1 text-base font-semibold ${isNowPlayingCard ? 'text-emerald-400' : 'text-zinc-100'}`}
+                >
+                  {card.title}
+                </p>
+                <p className="mt-1 line-clamp-1 text-sm text-zinc-400">{card.subtitle}</p>
+              </NavLink>
+            );
+          })}
+        </DragScroll>
       </section>
 
       <section className="mt-12">
@@ -1361,71 +1156,64 @@ function HomePage() {
           </button>
         </div>
 
-        <div
-          className="relative"
-          onMouseMove={moreLikeCarousel.handleMouseMove}
-          onMouseLeave={moreLikeCarousel.handleMouseLeave}
+        <DragScroll
+          previousLabel={t('homePage.carousel.previous')}
+          nextLabel={t('homePage.carousel.next')}
+          className="flex gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
-          <div
-            ref={moreLikeCarousel.scrollerRef}
-            className="flex gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          >
-            {moreLikeLvbelCards.map((card) => {
-              const isNowPlayingCard = isShelfCardNowPlaying(card);
+          {moreLikeLvbelCards.map((card) => {
+            const isNowPlayingCard = isShelfCardNowPlaying(card);
 
-              return (
-                <NavLink
-                  key={card.id}
-                  to={card.to}
-                  className="group relative w-[220px] min-w-[220px] rounded-xl bg-zinc-900/75 p-3 transition hover:bg-zinc-800/85"
-                >
-                  <div className="relative mb-3 aspect-square overflow-hidden rounded-lg">
-                    <img
-                      src={card.image}
-                      alt={card.title}
-                      className="h-full w-full object-cover"
-                      loading="lazy"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent" />
+            return (
+              <NavLink
+                key={card.id}
+                to={card.to}
+                className="group relative w-[220px] min-w-[220px] rounded-xl bg-zinc-900/75 p-3 transition hover:bg-zinc-800/85"
+              >
+                <div className="relative mb-3 aspect-square overflow-hidden rounded-lg">
+                  <img
+                    src={card.image}
+                    alt={card.title}
+                    className="h-full w-full object-cover"
+                    loading="lazy"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent" />
 
-                    {card.topTag && (
-                      <span className="absolute right-2 top-2 rounded bg-black/70 px-2 py-0.5 text-[10px] font-black tracking-widest text-zinc-100">
-                        {card.topTag}
+                  {card.topTag && (
+                    <span className="absolute right-2 top-2 rounded bg-black/70 px-2 py-0.5 text-[10px] font-black tracking-widest text-zinc-100">
+                      {card.topTag}
+                    </span>
+                  )}
+
+                  <div className="absolute bottom-6 right-6">
+                    {isNowPlayingCard ? (
+                      <span className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-black/65 ring-1 ring-white/15">
+                        <NowPlayingEqualizer className="h-5 w-5" />
+                      </span>
+                    ) : (
+                      <span className="inline-flex h-12 w-12 translate-y-2 items-center justify-center rounded-full bg-emerald-500 text-black opacity-0 shadow-2xl shadow-black/60 transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100">
+                        <svg
+                          viewBox="0 0 24 24"
+                          className="h-6 w-6 fill-current"
+                          aria-hidden="true"
+                        >
+                          <path d="m7.05 3.606 13.49 7.788a.7.7 0 0 1 0 1.212L7.05 20.394A.7.7 0 0 1 6 19.788V4.212a.7.7 0 0 1 1.05-.606"></path>
+                        </svg>
                       </span>
                     )}
-
-                    <div className="absolute bottom-6 right-6">
-                      {isNowPlayingCard ? (
-                        <span className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-black/65 ring-1 ring-white/15">
-                          <NowPlayingEqualizer className="h-5 w-5" />
-                        </span>
-                      ) : (
-                        <button type="button" onClick={(e) => handleCardPlayClick(e, card)} className="inline-flex h-12 w-12 translate-y-2 items-center justify-center rounded-full bg-emerald-500 text-black opacity-0 shadow-2xl shadow-black/60 transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100">
-                          <svg
-                            viewBox="0 0 24 24"
-                            className="h-6 w-6 fill-current"
-                            aria-hidden="true"
-                          >
-                            <path d="m7.05 3.606 13.49 7.788a.7.7 0 0 1 0 1.212L7.05 20.394A.7.7 0 0 1 6 19.788V4.212a.7.7 0 0 1 1.05-.606"></path>
-                          </svg>
-                        </button>
-                      )}
-                    </div>
                   </div>
+                </div>
 
-                  <p
-                    className={`line-clamp-1 text-base font-semibold ${isNowPlayingCard ? 'text-emerald-400' : 'text-zinc-100'}`}
-                  >
-                    {card.title}
-                  </p>
-                  <p className="mt-1 line-clamp-2 text-sm text-zinc-400">{card.subtitle}</p>
-                </NavLink>
-              );
-            })}
-          </div>
-
-          <CarouselEdgeControls controls={moreLikeCarousel} t={t} />
-        </div>
+                <p
+                  className={`line-clamp-1 text-base font-semibold ${isNowPlayingCard ? 'text-emerald-400' : 'text-zinc-100'}`}
+                >
+                  {card.title}
+                </p>
+                <p className="mt-1 line-clamp-2 text-sm text-zinc-400">{card.subtitle}</p>
+              </NavLink>
+            );
+          })}
+        </DragScroll>
       </section>
 
       <section className="mt-12">
@@ -1439,71 +1227,64 @@ function HomePage() {
           </button>
         </div>
 
-        <div
-          className="relative"
-          onMouseMove={recommendedStationsCarousel.handleMouseMove}
-          onMouseLeave={recommendedStationsCarousel.handleMouseLeave}
+        <DragScroll
+          previousLabel={t('homePage.carousel.previous')}
+          nextLabel={t('homePage.carousel.next')}
+          className="flex gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
-          <div
-            ref={recommendedStationsCarousel.scrollerRef}
-            className="flex gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          >
-            {recommendedStationCards.map((card) => {
-              const isNowPlayingCard = isShelfCardNowPlaying(card);
+          {recommendedStationCards.map((card) => {
+            const isNowPlayingCard = isShelfCardNowPlaying(card);
 
-              return (
-                <NavLink
-                  key={card.id}
-                  to={card.to}
-                  className="group relative w-[220px] min-w-[220px] rounded-xl bg-zinc-900/75 p-3 transition hover:bg-zinc-800/85"
-                >
-                  <div className="relative mb-3 aspect-square overflow-hidden rounded-lg">
-                    <img
-                      src={card.image}
-                      alt={card.title}
-                      className="h-full w-full object-cover"
-                      loading="lazy"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent" />
+            return (
+              <NavLink
+                key={card.id}
+                to={card.to}
+                className="group relative w-[220px] min-w-[220px] rounded-xl bg-zinc-900/75 p-3 transition hover:bg-zinc-800/85"
+              >
+                <div className="relative mb-3 aspect-square overflow-hidden rounded-lg">
+                  <img
+                    src={card.image}
+                    alt={card.title}
+                    className="h-full w-full object-cover"
+                    loading="lazy"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent" />
 
-                    {card.topTag && (
-                      <span className="absolute right-2 top-2 rounded bg-black/70 px-2 py-0.5 text-[10px] font-black tracking-widest text-zinc-100">
-                        {card.topTag}
+                  {card.topTag && (
+                    <span className="absolute right-2 top-2 rounded bg-black/70 px-2 py-0.5 text-[10px] font-black tracking-widest text-zinc-100">
+                      {card.topTag}
+                    </span>
+                  )}
+
+                  <div className="absolute bottom-6 right-6">
+                    {isNowPlayingCard ? (
+                      <span className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-black/65 ring-1 ring-white/15">
+                        <NowPlayingEqualizer className="h-5 w-5" />
+                      </span>
+                    ) : (
+                      <span className="inline-flex h-12 w-12 translate-y-2 items-center justify-center rounded-full bg-emerald-500 text-black opacity-0 shadow-2xl shadow-black/60 transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100">
+                        <svg
+                          viewBox="0 0 24 24"
+                          className="h-6 w-6 fill-current"
+                          aria-hidden="true"
+                        >
+                          <path d="m7.05 3.606 13.49 7.788a.7.7 0 0 1 0 1.212L7.05 20.394A.7.7 0 0 1 6 19.788V4.212a.7.7 0 0 1 1.05-.606"></path>
+                        </svg>
                       </span>
                     )}
-
-                    <div className="absolute bottom-6 right-6">
-                      {isNowPlayingCard ? (
-                        <span className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-black/65 ring-1 ring-white/15">
-                          <NowPlayingEqualizer className="h-5 w-5" />
-                        </span>
-                      ) : (
-                        <button type="button" onClick={(e) => handleCardPlayClick(e, card)} className="inline-flex h-12 w-12 translate-y-2 items-center justify-center rounded-full bg-emerald-500 text-black opacity-0 shadow-2xl shadow-black/60 transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100">
-                          <svg
-                            viewBox="0 0 24 24"
-                            className="h-6 w-6 fill-current"
-                            aria-hidden="true"
-                          >
-                            <path d="m7.05 3.606 13.49 7.788a.7.7 0 0 1 0 1.212L7.05 20.394A.7.7 0 0 1 6 19.788V4.212a.7.7 0 0 1 1.05-.606"></path>
-                          </svg>
-                        </button>
-                      )}
-                    </div>
                   </div>
+                </div>
 
-                  <p
-                    className={`line-clamp-1 text-base font-semibold ${isNowPlayingCard ? 'text-emerald-400' : 'text-zinc-100'}`}
-                  >
-                    {card.title}
-                  </p>
-                  <p className="mt-1 line-clamp-2 text-sm text-zinc-400">{card.subtitle}</p>
-                </NavLink>
-              );
-            })}
-          </div>
-
-          <CarouselEdgeControls controls={recommendedStationsCarousel} t={t} />
-        </div>
+                <p
+                  className={`line-clamp-1 text-base font-semibold ${isNowPlayingCard ? 'text-emerald-400' : 'text-zinc-100'}`}
+                >
+                  {card.title}
+                </p>
+                <p className="mt-1 line-clamp-2 text-sm text-zinc-400">{card.subtitle}</p>
+              </NavLink>
+            );
+          })}
+        </DragScroll>
       </section>
 
       <section className="mt-12">
@@ -1516,65 +1297,58 @@ function HomePage() {
           </button>
         </div>
 
-        <div
-          className="relative"
-          onMouseMove={episodesCarousel.handleMouseMove}
-          onMouseLeave={episodesCarousel.handleMouseLeave}
+        <DragScroll
+          previousLabel={t('homePage.carousel.previous')}
+          nextLabel={t('homePage.carousel.next')}
+          className="flex gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
-          <div
-            ref={episodesCarousel.scrollerRef}
-            className="flex gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          >
-            {episodesYouMightLikeCards.map((card) => {
-              const isNowPlayingCard = isShelfCardNowPlaying(card);
+          {episodesYouMightLikeCards.map((card) => {
+            const isNowPlayingCard = isShelfCardNowPlaying(card);
 
-              return (
-                <NavLink
-                  key={card.id}
-                  to={card.to}
-                  className="group relative w-[220px] min-w-[220px] rounded-xl bg-zinc-900/75 p-3 transition hover:bg-zinc-800/85"
-                >
-                  <div className="relative mb-3 aspect-square overflow-hidden rounded-lg">
-                    <img
-                      src={card.image}
-                      alt={card.title}
-                      className="h-full w-full object-cover"
-                      loading="lazy"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent" />
+            return (
+              <NavLink
+                key={card.id}
+                to={card.to}
+                className="group relative w-[220px] min-w-[220px] rounded-xl bg-zinc-900/75 p-3 transition hover:bg-zinc-800/85"
+              >
+                <div className="relative mb-3 aspect-square overflow-hidden rounded-lg">
+                  <img
+                    src={card.image}
+                    alt={card.title}
+                    className="h-full w-full object-cover"
+                    loading="lazy"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent" />
 
-                    <div className="absolute bottom-6 right-6">
-                      {isNowPlayingCard ? (
-                        <span className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-black/65 ring-1 ring-white/15">
-                          <NowPlayingEqualizer className="h-5 w-5" />
-                        </span>
-                      ) : (
-                        <button type="button" onClick={(e) => handleCardPlayClick(e, card)} className="inline-flex h-12 w-12 translate-y-2 items-center justify-center rounded-full bg-emerald-500 text-black opacity-0 shadow-2xl shadow-black/60 transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100">
-                          <svg
-                            viewBox="0 0 24 24"
-                            className="h-6 w-6 fill-current"
-                            aria-hidden="true"
-                          >
-                            <path d="m7.05 3.606 13.49 7.788a.7.7 0 0 1 0 1.212L7.05 20.394A.7.7 0 0 1 6 19.788V4.212a.7.7 0 0 1 1.05-.606"></path>
-                          </svg>
-                        </button>
-                      )}
-                    </div>
+                  <div className="absolute bottom-6 right-6">
+                    {isNowPlayingCard ? (
+                      <span className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-black/65 ring-1 ring-white/15">
+                        <NowPlayingEqualizer className="h-5 w-5" />
+                      </span>
+                    ) : (
+                      <span className="inline-flex h-12 w-12 translate-y-2 items-center justify-center rounded-full bg-emerald-500 text-black opacity-0 shadow-2xl shadow-black/60 transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100">
+                        <svg
+                          viewBox="0 0 24 24"
+                          className="h-6 w-6 fill-current"
+                          aria-hidden="true"
+                        >
+                          <path d="m7.05 3.606 13.49 7.788a.7.7 0 0 1 0 1.212L7.05 20.394A.7.7 0 0 1 6 19.788V4.212a.7.7 0 0 1 1.05-.606"></path>
+                        </svg>
+                      </span>
+                    )}
                   </div>
+                </div>
 
-                  <p
-                    className={`line-clamp-2 text-base font-semibold ${isNowPlayingCard ? 'text-emerald-400' : 'text-zinc-100'}`}
-                  >
-                    {card.title}
-                  </p>
-                  <p className="mt-1 line-clamp-1 text-sm text-zinc-400">{card.subtitle}</p>
-                </NavLink>
-              );
-            })}
-          </div>
-
-          <CarouselEdgeControls controls={episodesCarousel} t={t} />
-        </div>
+                <p
+                  className={`line-clamp-2 text-base font-semibold ${isNowPlayingCard ? 'text-emerald-400' : 'text-zinc-100'}`}
+                >
+                  {card.title}
+                </p>
+                <p className="mt-1 line-clamp-1 text-sm text-zinc-400">{card.subtitle}</p>
+              </NavLink>
+            );
+          })}
+        </DragScroll>
       </section>
 
       <section className="mt-12">
@@ -1587,71 +1361,64 @@ function HomePage() {
           </button>
         </div>
 
-        <div
-          className="relative"
-          onMouseMove={popularRadioCarousel.handleMouseMove}
-          onMouseLeave={popularRadioCarousel.handleMouseLeave}
+        <DragScroll
+          previousLabel={t('homePage.carousel.previous')}
+          nextLabel={t('homePage.carousel.next')}
+          className="flex gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
-          <div
-            ref={popularRadioCarousel.scrollerRef}
-            className="flex gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          >
-            {popularRadioCards.map((card) => {
-              const isNowPlayingCard = isShelfCardNowPlaying(card);
+          {popularRadioCards.map((card) => {
+            const isNowPlayingCard = isShelfCardNowPlaying(card);
 
-              return (
-                <NavLink
-                  key={card.id}
-                  to={card.to}
-                  className="group relative w-[220px] min-w-[220px] rounded-xl bg-zinc-900/75 p-3 transition hover:bg-zinc-800/85"
-                >
-                  <div className="relative mb-3 aspect-square overflow-hidden rounded-lg">
-                    <img
-                      src={card.image}
-                      alt={card.title}
-                      className="h-full w-full object-cover"
-                      loading="lazy"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent" />
+            return (
+              <NavLink
+                key={card.id}
+                to={card.to}
+                className="group relative w-[220px] min-w-[220px] rounded-xl bg-zinc-900/75 p-3 transition hover:bg-zinc-800/85"
+              >
+                <div className="relative mb-3 aspect-square overflow-hidden rounded-lg">
+                  <img
+                    src={card.image}
+                    alt={card.title}
+                    className="h-full w-full object-cover"
+                    loading="lazy"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent" />
 
-                    {card.topTag && (
-                      <span className="absolute right-2 top-2 rounded bg-black/70 px-2 py-0.5 text-[10px] font-black tracking-widest text-zinc-100">
-                        {card.topTag}
+                  {card.topTag && (
+                    <span className="absolute right-2 top-2 rounded bg-black/70 px-2 py-0.5 text-[10px] font-black tracking-widest text-zinc-100">
+                      {card.topTag}
+                    </span>
+                  )}
+
+                  <div className="absolute bottom-6 right-6">
+                    {isNowPlayingCard ? (
+                      <span className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-black/65 ring-1 ring-white/15">
+                        <NowPlayingEqualizer className="h-5 w-5" />
+                      </span>
+                    ) : (
+                      <span className="inline-flex h-12 w-12 translate-y-2 items-center justify-center rounded-full bg-emerald-500 text-black opacity-0 shadow-2xl shadow-black/60 transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100">
+                        <svg
+                          viewBox="0 0 24 24"
+                          className="h-6 w-6 fill-current"
+                          aria-hidden="true"
+                        >
+                          <path d="m7.05 3.606 13.49 7.788a.7.7 0 0 1 0 1.212L7.05 20.394A.7.7 0 0 1 6 19.788V4.212a.7.7 0 0 1 1.05-.606"></path>
+                        </svg>
                       </span>
                     )}
-
-                    <div className="absolute bottom-6 right-6">
-                      {isNowPlayingCard ? (
-                        <span className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-black/65 ring-1 ring-white/15">
-                          <NowPlayingEqualizer className="h-5 w-5" />
-                        </span>
-                      ) : (
-                        <button type="button" onClick={(e) => handleCardPlayClick(e, card)} className="inline-flex h-12 w-12 translate-y-2 items-center justify-center rounded-full bg-emerald-500 text-black opacity-0 shadow-2xl shadow-black/60 transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100">
-                          <svg
-                            viewBox="0 0 24 24"
-                            className="h-6 w-6 fill-current"
-                            aria-hidden="true"
-                          >
-                            <path d="m7.05 3.606 13.49 7.788a.7.7 0 0 1 0 1.212L7.05 20.394A.7.7 0 0 1 6 19.788V4.212a.7.7 0 0 1 1.05-.606"></path>
-                          </svg>
-                        </button>
-                      )}
-                    </div>
                   </div>
+                </div>
 
-                  <p
-                    className={`line-clamp-1 text-base font-semibold ${isNowPlayingCard ? 'text-emerald-400' : 'text-zinc-100'}`}
-                  >
-                    {card.title}
-                  </p>
-                  <p className="mt-1 line-clamp-2 text-sm text-zinc-400">{card.subtitle}</p>
-                </NavLink>
-              );
-            })}
-          </div>
-
-          <CarouselEdgeControls controls={popularRadioCarousel} t={t} />
-        </div>
+                <p
+                  className={`line-clamp-1 text-base font-semibold ${isNowPlayingCard ? 'text-emerald-400' : 'text-zinc-100'}`}
+                >
+                  {card.title}
+                </p>
+                <p className="mt-1 line-clamp-2 text-sm text-zinc-400">{card.subtitle}</p>
+              </NavLink>
+            );
+          })}
+        </DragScroll>
       </section>
 
       <section className="mt-12">
@@ -1664,67 +1431,60 @@ function HomePage() {
           </button>
         </div>
 
-        <div
-          className="relative"
-          onMouseMove={yourPlaylistsCarousel.handleMouseMove}
-          onMouseLeave={yourPlaylistsCarousel.handleMouseLeave}
+        <DragScroll
+          previousLabel={t('homePage.carousel.previous')}
+          nextLabel={t('homePage.carousel.next')}
+          className="flex gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
-          <div
-            ref={yourPlaylistsCarousel.scrollerRef}
-            className="flex gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          >
-            {yourPlaylistCards.map((card) => {
-              const isNowPlayingCard = isShelfCardNowPlaying(card);
+          {yourPlaylistCards.map((card) => {
+            const isNowPlayingCard = isShelfCardNowPlaying(card);
 
-              return (
-                <NavLink
-                  key={card.id}
-                  to={card.to}
-                  className="group relative w-[220px] min-w-[220px] rounded-xl bg-zinc-900/75 p-3 transition hover:bg-zinc-800/85"
-                >
-                  <div className="relative mb-3 aspect-square overflow-hidden rounded-lg">
-                    <img
-                      src={card.image}
-                      alt={card.title}
-                      className="h-full w-full object-cover"
-                      loading="lazy"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent" />
+            return (
+              <NavLink
+                key={card.id}
+                to={card.to}
+                className="group relative w-[220px] min-w-[220px] rounded-xl bg-zinc-900/75 p-3 transition hover:bg-zinc-800/85"
+              >
+                <div className="relative mb-3 aspect-square overflow-hidden rounded-lg">
+                  <img
+                    src={card.image}
+                    alt={card.title}
+                    className="h-full w-full object-cover"
+                    loading="lazy"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent" />
 
-                    <div className="absolute bottom-6 right-6">
-                      {isNowPlayingCard ? (
-                        <span className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-black/65 ring-1 ring-white/15">
-                          <NowPlayingEqualizer className="h-5 w-5" />
-                        </span>
-                      ) : (
-                        <button type="button" onClick={(e) => handleCardPlayClick(e, card)} className="inline-flex h-12 w-12 translate-y-2 items-center justify-center rounded-full bg-emerald-500 text-black opacity-0 shadow-2xl shadow-black/60 transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100">
-                          <svg
-                            viewBox="0 0 24 24"
-                            className="h-6 w-6 fill-current"
-                            aria-hidden="true"
-                          >
-                            <path d="m7.05 3.606 13.49 7.788a.7.7 0 0 1 0 1.212L7.05 20.394A.7.7 0 0 1 6 19.788V4.212a.7.7 0 0 1 1.05-.606"></path>
-                          </svg>
-                        </button>
-                      )}
-                    </div>
+                  <div className="absolute bottom-6 right-6">
+                    {isNowPlayingCard ? (
+                      <span className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-black/65 ring-1 ring-white/15">
+                        <NowPlayingEqualizer className="h-5 w-5" />
+                      </span>
+                    ) : (
+                      <span className="inline-flex h-12 w-12 translate-y-2 items-center justify-center rounded-full bg-emerald-500 text-black opacity-0 shadow-2xl shadow-black/60 transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100">
+                        <svg
+                          viewBox="0 0 24 24"
+                          className="h-6 w-6 fill-current"
+                          aria-hidden="true"
+                        >
+                          <path d="m7.05 3.606 13.49 7.788a.7.7 0 0 1 0 1.212L7.05 20.394A.7.7 0 0 1 6 19.788V4.212a.7.7 0 0 1 1.05-.606"></path>
+                        </svg>
+                      </span>
+                    )}
                   </div>
+                </div>
 
-                  <p
-                    className={`line-clamp-1 text-base font-semibold ${isNowPlayingCard ? 'text-emerald-400' : 'text-zinc-100'}`}
-                  >
-                    {card.title}
-                  </p>
-                  <p className="mt-1 line-clamp-1 text-sm text-zinc-400">
-                    {card.subtitle.replace('Emre Kaya', userName)}
-                  </p>
-                </NavLink>
-              );
-            })}
-          </div>
-
-          <CarouselEdgeControls controls={yourPlaylistsCarousel} t={t} />
-        </div>
+                <p
+                  className={`line-clamp-1 text-base font-semibold ${isNowPlayingCard ? 'text-emerald-400' : 'text-zinc-100'}`}
+                >
+                  {card.title}
+                </p>
+                <p className="mt-1 line-clamp-1 text-sm text-zinc-400">
+                  {card.subtitle.replace('Emre Kaya', userName)}
+                </p>
+              </NavLink>
+            );
+          })}
+        </DragScroll>
       </section>
 
       <section className="mt-12 pb-10">
