@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import api from '@/lib/axios';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -7,6 +7,7 @@ import { useAuthStore } from '@/store/useAuthStore';
 function LoginPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
   const login = useAuthStore((state) => state.login);
 
   const [email, setEmail] = useState('');
@@ -37,7 +38,17 @@ function LoginPage() {
       };
 
       login(loggedUser, authToken);
-      navigate(`/user/me`);
+
+      const previousLocation = (
+        location.state as {
+          from?: { pathname?: string; search?: string; hash?: string };
+        } | null
+      )?.from;
+      const redirectPath = previousLocation?.pathname
+        ? `${previousLocation.pathname}${previousLocation.search ?? ''}${previousLocation.hash ?? ''}`
+        : '/home';
+
+      navigate(redirectPath, { replace: true });
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       console.error(err);
