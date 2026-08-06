@@ -8,10 +8,34 @@ const api = axios.create({
   },
 });
 
+const readPersistedToken = () => {
+  if (typeof window === 'undefined') return null;
+
+  const directToken =
+    window.localStorage.getItem('token') ||
+    window.localStorage.getItem('accessToken') ||
+    window.localStorage.getItem('authToken');
+
+  if (directToken) return directToken;
+
+  try {
+    const storedAuth = window.localStorage.getItem('auth-storage');
+    if (!storedAuth) return null;
+
+    const parsedAuth = JSON.parse(storedAuth);
+    return parsedAuth?.state?.token || parsedAuth?.state?.accessToken || null;
+  } catch {
+    return null;
+  }
+};
+
 api.interceptors.request.use(
   (config) => {
-    // Inject the token dynamically from Zustand store
-    const token = useAuthStore.getState().token;
+    const token =
+      useAuthStore.getState().token ||
+      readPersistedToken() ||
+      import.meta.env.VITE_API_BEARER_TOKEN;
+
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`;
     }

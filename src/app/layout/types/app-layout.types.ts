@@ -4,7 +4,7 @@ export type LibraryItem = {
   meta: string;
   palette: string;
   image?: string | string[];
-  type: 'playlist' | 'artist' | 'album' | 'podcast';
+  type: 'playlist' | 'artist' | 'album' | 'podcast' | 'song';
 };
 
 export type RecentSearchItem = {

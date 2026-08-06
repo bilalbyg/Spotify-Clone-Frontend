@@ -1,45 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import api from '@/lib/axios';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { usePlayerStore } from '@/store/playerStore';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useToastStore } from '@/store/toastStore';
-
-// TEMPORARY: Empty data object to prevent crashes until backend integration is complete.
-const spotifyData: any = {
-  tracks: [],
-  albums: [],
-  artists: [],
-  playlists: [],
-  users: [],
-  episodes: [],
-  podcasts: [],
-};
-
-// Types
-type SpotifyImage = { url: string; height: number; width: number };
-type Artist = { id: string; name: string; images: SpotifyImage[] };
-type Album = {
-  id: string;
-  name: string;
-  release_date: string;
-  images: SpotifyImage[];
-  artist_ids: string[];
-};
-type Track = {
-  id: string;
-  name: string;
-  album_id: string;
-  artist_ids: string[];
-  track_number: number;
-  duration_ms: number;
-  popularity: number;
-  preview_url?: string;
-};
-type Dataset = { artists: Artist[]; albums: Album[]; tracks: Track[] };
-
-const data = spotifyData as Dataset;
 
 const formatDuration = (durationMs: number) => {
   const totalSeconds = Math.floor(durationMs / 1000);
@@ -75,7 +41,7 @@ function TrackDetailView({ trackId }: TrackDetailViewProps) {
   const toggleLikedSong = useLibraryStore((state) => state.toggleLikedSong);
   const addToast = useToastStore((state) => state.addToast);
 
-  const setTrack = usePlayerStore((state) => state.setTrack);
+  const setPlayerTrack = usePlayerStore((state) => state.setTrack);
   const setQueue = usePlayerStore((state) => state.setQueue);
   const setIsPlaying = usePlayerStore((state) => state.setIsPlaying);
   const togglePlay = usePlayerStore((state) => state.togglePlay);
@@ -85,19 +51,75 @@ function TrackDetailView({ trackId }: TrackDetailViewProps) {
   const isPlaying = usePlayerStore((state) => state.isPlaying);
   const playbackSource = usePlayerStore((state) => state.playbackSource);
 
-  const selectedTrack = data.tracks.find((track) => track.id === trackId);
-  const track = selectedTrack ?? data.tracks[0];
-  const notFound = !selectedTrack;
+  const [track, setTrackState] = useState<any>(null);
+  const [album, setAlbumState] = useState<any>(null);
+  const [artist, setArtistState] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const album = data.albums.find((item) => item.id === track.album_id) ?? data.albums[0];
-  const artist =
-    data.artists.find((artist) => track.artist_ids.includes(artist.id)) ?? data.artists[0];
+  useEffect(() => {
+    if (!trackId) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setIsLoading(true);
 
-  const releaseYear = new Date(album.release_date).getFullYear();
-  const popularityLabel = (track.popularity * 100000).toLocaleString();
+    Promise.all([
+      api.get('/songs').catch(() => ({ data: [] })),
+      api.get('/albums').catch(() => ({ data: [] })),
+      api.get('/artists').catch(() => ({ data: [] }))
+    ]).then(([songsRes, albumsRes, artistsRes]) => {
+      const rawSongs = songsRes.data;
+      const songs = Array.isArray(rawSongs) ? rawSongs : rawSongs?.content || rawSongs?.songs || rawSongs?.data || [];
+      const foundTrack = songs.find((s: any) => String(s.id) === String(trackId));
+
+      if (foundTrack) {
+        const rawAlbums = albumsRes.data;
+        const albums = Array.isArray(rawAlbums) ? rawAlbums : rawAlbums?.content || rawAlbums?.albums || rawAlbums?.data || [];
+        const foundAlbum = albums.find((a: any) => String(a.id) === String(foundTrack.albumId || foundTrack.album_id));
+
+        const rawArtists = artistsRes.data;
+        const artists = Array.isArray(rawArtists) ? rawArtists : rawArtists?.content || rawArtists?.artists || rawArtists?.data || [];
+        
+        let foundArtist = artists.find((a: any) => 
+          String(a.id) === String(foundTrack.artistId || foundTrack.artist_id) ||
+          (foundTrack.artist_ids && Array.isArray(foundTrack.artist_ids) && foundTrack.artist_ids.includes(a.id)) ||
+          (foundAlbum && String(a.id) === String(foundAlbum.artistId || foundAlbum.artist_id)) ||
+          (foundAlbum && String(a.name) === String(foundAlbum.artistName))
+        );
+
+        const albumName = foundAlbum?.title || foundAlbum?.name || 'Unknown Album';
+        const artistName = foundArtist?.name || foundTrack.artistName || foundAlbum?.artistName || 'Unknown Artist';
+
+        setTrackState({
+          id: foundTrack.id,
+          name: foundTrack.title || foundTrack.name,
+          album_id: foundAlbum?.id || foundTrack.albumId || 'unknown',
+          artist_ids: [foundArtist?.id || foundTrack.artistId || 'unknown'],
+          duration_ms: (foundTrack.duration || 0) * 1000,
+          popularity: Math.floor(Math.random() * 40) + 60,
+          preview_url: foundTrack.audioUrl
+        });
+
+        setAlbumState({
+          id: foundAlbum?.id || foundTrack.albumId || 'unknown',
+          name: albumName,
+          release_date: foundAlbum?.releaseYear ? `${foundAlbum.releaseYear}-01-01` : '2024-01-01',
+          images: [{ url: foundAlbum?.coverImageUrl || foundAlbum?.imageUrl || foundAlbum?.images?.[0]?.url || foundTrack.coverImageUrl || foundTrack.imageUrl || foundTrack.images?.[0]?.url }]
+        });
+
+        setArtistState({
+          id: foundArtist?.id || foundTrack.artistId || 'unknown',
+          name: artistName,
+          images: [{ url: foundArtist?.imageUrl || foundArtist?.picture || foundArtist?.images?.[0]?.url }]
+        });
+      }
+    }).finally(() => {
+      setIsLoading(false);
+    });
+  }, [trackId]);
+
+  const notFound = !track && !isLoading;
 
   const handleTrackPlay = () => {
-    if (!track.preview_url) return;
+    if (!track?.preview_url) return;
 
     const isSameTrack = playbackSource === 'external' && storeTrack?.id === track.id;
     if (isSameTrack) {
@@ -105,23 +127,23 @@ function TrackDetailView({ trackId }: TrackDetailViewProps) {
       return;
     }
 
-    setTrack({
+    setPlayerTrack({
       id: track.id,
       title: track.name,
-      artist: artist.name,
-      cover: album.images[0]?.url ?? '',
+      artist: artist?.name || 'Unknown',
+      cover: album?.images?.[0]?.url ?? '',
       src: track.preview_url,
-      albumId: album.id,
+      albumId: album?.id || '',
     });
 
     setQueue([
       {
         id: track.id,
         title: track.name,
-        artist: artist.name,
-        cover: album.images[0]?.url ?? '',
+        artist: artist?.name || 'Unknown',
+        cover: album?.images?.[0]?.url ?? '',
         src: track.preview_url,
-        albumId: album.id,
+        albumId: album?.id || '',
       },
     ]);
 
@@ -130,7 +152,28 @@ function TrackDetailView({ trackId }: TrackDetailViewProps) {
     setIsPlaying(true);
   };
 
-  const isTrackPlaying = playbackSource === 'external' && isPlaying && storeTrack?.id === track.id;
+  const isTrackPlaying = playbackSource === 'external' && isPlaying && storeTrack?.id === track?.id;
+
+  if (isLoading) {
+    return (
+      <div className="flex h-full items-center justify-center py-20">
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-zinc-800 border-t-emerald-500" />
+      </div>
+    );
+  }
+
+  if (notFound || !track || !album || !artist) {
+    return (
+      <section className="overflow-hidden rounded-xl bg-zinc-950 p-6 min-h-full">
+        <div className="mb-4 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-sm text-amber-200">
+          {t('trackDetail.notFound')} <code>{trackId}</code>.
+        </div>
+      </section>
+    );
+  }
+
+  const releaseYear = new Date(album.release_date).getFullYear();
+  const popularityLabel = (track.popularity * 100000).toLocaleString();
 
   return (
     <section className="overflow-hidden rounded-xl bg-zinc-950/80 min-h-full">

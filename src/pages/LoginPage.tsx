@@ -22,7 +22,12 @@ function LoginPage() {
     setError('');
     try {
       const response = await api.post('/auth/login', { email, password });
-      const { token, username, email: responseEmail } = response.data;
+      const { accessToken, token, username, email: responseEmail } = response.data;
+      const authToken = accessToken || token;
+
+      if (!authToken) {
+        throw new Error('Login response did not include an access token');
+      }
 
       const loggedUser = {
         id: 'me', // Default ID for correct routing
@@ -31,7 +36,7 @@ function LoginPage() {
         name: username, // Fallback name to username
       };
 
-      login(loggedUser, token);
+      login(loggedUser, authToken);
       navigate(`/user/me`);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {

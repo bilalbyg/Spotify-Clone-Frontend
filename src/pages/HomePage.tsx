@@ -12,7 +12,7 @@ import {
 } from 'react';
 import { useTranslation } from 'react-i18next';
 import { NavLink } from 'react-router-dom';
-import { getLibraryItemRoute } from '@/helpers/helper';
+import { getLibraryItemRoute, normalizeApiAssetUrl } from '@/helpers/helper';
 import { NowPlayingEqualizer } from '@/shared/components/NowPlayingEqualizer';
 import { usePlayerStore } from '@/store/playerStore';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -328,7 +328,7 @@ function HomePage() {
           id: `artist-${artist.id}`,
           title: artist.name,
           subtitle: artist.bio || (artist.genres?.length ? artist.genres[0] : 'Artist'),
-          image: artist.imageUrl || artist.picture || artist.images?.[0]?.url || `https://ui-avatars.com/api/?name=${encodeURIComponent(artist.name)}&background=random`,
+          image: normalizeApiAssetUrl(artist.imageUrl || artist.picture || artist.images?.[0]?.url) || `https://ui-avatars.com/api/?name=${encodeURIComponent(artist.name)}&background=random`,
           to: `/artist/${artist.id}`,
           shape: 'circle' as const,
         }));
@@ -336,7 +336,13 @@ function HomePage() {
       })
       .catch((err: any) => {
         console.error('Failed to fetch artists:', err);
-        setArtistsError('Failed to load artists.');
+        const status = err?.response?.status;
+        const message = err?.response?.data?.message || err?.message;
+        setArtistsError(
+          status
+            ? `Artists yuklenemedi. HTTP ${status}${message ? `: ${message}` : ''}`
+            : `Artists yuklenemedi.${message ? ` ${message}` : ''}`,
+        );
       })
       .finally(() => {
         setIsArtistsLoading(false);
@@ -349,55 +355,58 @@ function HomePage() {
 
     Promise.all([
       api.get('/albums').catch((err: any) => {
-        console.error('Failed to fetch albums:', err?.response?.status, err?.response?.data, err?.message);
-        setAlbumsError(`Albümler yüklenemedi: ${err?.message || 'Bilinmeyen hata'}`);
-        return null;
+        console.error('Failed to fetch albums:', err);
+        const status = err?.response?.status;
+        const message = err?.response?.data?.message || err?.message;
+        setAlbumsError(
+          status
+            ? `Albums yuklenemedi. HTTP ${status}${message ? `: ${message}` : ''}`
+            : `Albums yuklenemedi.${message ? ` ${message}` : ''}`
+        );
+        return { data: [] };
       }),
       api.get('/songs').catch((err: any) => {
-        console.error('Failed to fetch songs:', err?.response?.status, err?.response?.data, err?.message);
-        setSongsError(`Şarkılar yüklenemedi: ${err?.message || 'Bilinmeyen hata'}`);
-        return null;
+        console.error('Failed to fetch songs:', err);
+        const status = err?.response?.status;
+        const message = err?.response?.data?.message || err?.message;
+        setSongsError(
+          status
+            ? `Songs yuklenemedi. HTTP ${status}${message ? `: ${message}` : ''}`
+            : `Songs yuklenemedi.${message ? ` ${message}` : ''}`
+        );
+        return { data: [] };
       })
     ]).then(([albumsRes, songsRes]) => {
-      let albumsList: any[] = [];
-      if (albumsRes) {
-        const raw = albumsRes.data;
-        albumsList = Array.isArray(raw)
-          ? raw
-          : raw?.content || raw?.albums || raw?.data || [];
-        const formattedAlbums = albumsList.map((album: any) => ({
-          id: `album-${album.id}`,
-          title: album.title,
-          subtitle: `${album.artistName || 'Artist'} • ${album.releaseYear || 'Album'}`,
-          image: album.coverImageUrl || `https://picsum.photos/seed/album-${album.id}/640/640`,
-          to: `/album/${album.id}`,
-          shape: 'square' as const,
-        }));
-        setMadeForAlbumCards(formattedAlbums);
-      }
+      const rawAlbums = albumsRes.data;
+      const albums = Array.isArray(rawAlbums) ? rawAlbums : rawAlbums?.content || rawAlbums?.albums || rawAlbums?.data || [];
+      
+      const formattedAlbums = albums.map((album: any) => ({
+        id: `album-${album.id}`,
+        title: album.title || album.name,
+        subtitle: album.releaseYear ? `Album • ${album.releaseYear}` : 'Album',
+        image: normalizeApiAssetUrl(album.coverImageUrl || album.images?.[0]?.url) || `https://picsum.photos/seed/album-${album.id}/640/640`,
+        to: `/album/${album.id}`,
+      }));
+      setMadeForAlbumCards(formattedAlbums);
       setIsAlbumsLoading(false);
 
-      if (songsRes) {
-        const raw = songsRes.data;
-        const songsList = Array.isArray(raw) ? raw : raw?.content || raw?.songs || raw?.data || [];
-        const formattedSongs = songsList.map((song: any) => {
-          const albumMatch = albumsList.find((a: any) => a.id === song.albumId);
-          const artistName = song.artistName || song.artist || albumMatch?.artistName || '';
-          const albumTitle = song.albumTitle || albumMatch?.title || '';
-          const subtitle = artistName && albumTitle
-            ? `${artistName} • ${albumTitle}`
-            : artistName || albumTitle || 'Song';
-          return {
-            id: `track-${song.id}`,
-            title: song.title,
-            subtitle,
-            image: albumMatch?.coverImageUrl || `https://picsum.photos/seed/album-${song.albumId || song.id}/640/640`,
-            to: `/track/${song.id}`,
-            shape: 'square' as const,
-          };
-        });
-        setMadeForSongCards(formattedSongs);
-      }
+      const rawSongs = songsRes.data;
+      const songs = Array.isArray(rawSongs) ? rawSongs : rawSongs?.content || rawSongs?.songs || rawSongs?.data || [];
+      
+      const formattedSongs = songs.map((song: any) => {
+        const albumForSong = albums.find((a: any) => a.id === song.albumId || a.id === song.album_id);
+        const albumImage = albumForSong ? normalizeApiAssetUrl(albumForSong.coverImageUrl || albumForSong.images?.[0]?.url) : null;
+        const songImage = normalizeApiAssetUrl(song.coverImageUrl || song.imageUrl || song.images?.[0]?.url) || albumImage || `https://picsum.photos/seed/song-${song.id}/640/640`;
+
+        return {
+          id: `song-${song.id}`,
+          title: song.title || song.name,
+          subtitle: song.artistName || 'Song',
+          image: songImage,
+          to: `/track/${song.id}`,
+        };
+      });
+      setMadeForSongCards(formattedSongs);
       setIsSongsLoading(false);
     });
   }, []);
@@ -451,7 +460,7 @@ function HomePage() {
     const pbContext = usePlayerStore.getState().playbackContext;
 
     if (item.type === 'artist') {
-      const artist = spotifyData.artists.find((a) => a.name === item.title || a.id === item.id);
+      const artist = spotifyData.artists.find((a: any) => a.name === item.title || a.id === item.id);
       if (!artist) return;
 
       // If already playing from this artist, toggle
@@ -461,11 +470,11 @@ function HomePage() {
       }
 
       const artistTracks = spotifyData.tracks
-        .filter((t) => t.artist_ids.includes(artist.id))
-        .sort((a, b) => b.popularity - a.popularity);
+        .filter((t: any) => t.artist_ids.includes(artist.id))
+        .sort((a: any, b: any) => b.popularity - a.popularity);
       if (artistTracks.length === 0) return;
 
-      const queue = artistTracks.map((track) => ({
+      const queue = artistTracks.map((track: any) => ({
         id: track.id,
         title: track.name,
         artist: artist.name,
@@ -483,7 +492,7 @@ function HomePage() {
     }
 
     if (item.type === 'album') {
-      const album = spotifyData.albums.find((a) => a.id === item.id);
+      const album = spotifyData.albums.find((a: any) => a.id === item.id);
       if (!album) return;
 
       // If already playing this album, toggle
@@ -493,13 +502,13 @@ function HomePage() {
       }
 
       const albumTracks = spotifyData.tracks
-        .filter((t) => t.album_id === album.id)
-        .sort((a, b) => a.track_number - b.track_number);
+        .filter((t: any) => t.album_id === album.id)
+        .sort((a: any, b: any) => a.track_number - b.track_number);
       if (albumTracks.length === 0) return;
 
       const artistName =
-        spotifyData.artists.find((a) => album.artist_ids.includes(a.id))?.name ?? 'Unknown';
-      const queue = albumTracks.map((track) => ({
+        spotifyData.artists.find((a: any) => album.artist_ids.includes(a.id))?.name ?? 'Unknown';
+      const queue = albumTracks.map((track: any) => ({
         id: track.id,
         title: track.name,
         artist: artistName,
@@ -524,12 +533,12 @@ function HomePage() {
       }
 
       const allTracks = spotifyData.tracks
-        .filter((t) => t.preview_url)
-        .sort((a, b) => b.popularity - a.popularity);
+        .filter((t: any) => t.preview_url)
+        .sort((a: any, b: any) => b.popularity - a.popularity);
       if (allTracks.length === 0) return;
 
-      const queue = allTracks.map((track) => {
-        const artist = spotifyData.artists.find((a) => track.artist_ids.includes(a.id));
+      const queue = allTracks.map((track: any) => {
+        const artist = spotifyData.artists.find((a: any) => track.artist_ids.includes(a.id));
         return {
           id: track.id,
           title: track.name,
@@ -583,6 +592,9 @@ function HomePage() {
 
     return `${typeLabel} . ${suffix}`;
   };
+
+  const shouldShowAlbumShelf = isAlbumsLoading || Boolean(albumsError) || madeForAlbumCards.length > 0;
+  const shouldShowSongShelf = isSongsLoading || Boolean(songsError) || madeForSongCards.length > 0;
 
   return (
     <>
@@ -827,7 +839,7 @@ function HomePage() {
                           <NowPlayingEqualizer className="h-5 w-5" />
                         </span>
                       ) : (
-                        <span className="inline-flex h-12 w-12 translate-y-2 items-center justify-center rounded-full bg-emerald-500 text-black opacity-0 shadow-2xl shadow-black/60 transition-all duration-200 group-hover/card:translate-y-0 group-hover/card:opacity-100">
+                        <button type="button" onClick={(e) => handleCardPlayClick(e, card)} className="inline-flex h-12 w-12 translate-y-2 items-center justify-center rounded-full bg-emerald-500 text-black opacity-0 shadow-2xl shadow-black/60 transition-all duration-200 group-hover/card:translate-y-0 group-hover/card:opacity-100">
                           <svg
                             viewBox="0 0 24 24"
                             className="h-6 w-6 fill-current"
@@ -835,7 +847,7 @@ function HomePage() {
                           >
                             <path d="m7.05 3.606 13.49 7.788a.7.7 0 0 1 0 1.212L7.05 20.394A.7.7 0 0 1 6 19.788V4.212a.7.7 0 0 1 1.05-.606"></path>
                           </svg>
-                        </span>
+                        </button>
                       )}
                     </div>
                   </div>
@@ -857,6 +869,7 @@ function HomePage() {
       </section>
 
       {/* Popular Albums Shelf */}
+      {shouldShowAlbumShelf && (
       <section className="mt-10">
         <div className="mb-4 flex items-end justify-between">
           <div>
@@ -940,8 +953,10 @@ function HomePage() {
           <CarouselEdgeControls controls={albumsCarousel} t={t} />
         </div>
       </section>
+      )}
 
       {/* Popular Songs Shelf */}
+      {shouldShowSongShelf && (
       <section className="mt-10">
         <div className="mb-4 flex items-end justify-between">
           <div>
@@ -1026,6 +1041,7 @@ function HomePage() {
           <CarouselEdgeControls controls={songsCarousel} t={t} />
         </div>
       </section>
+      )}
 
       <section className="mt-12">
         <div className="mb-4 flex items-end justify-between">
@@ -1074,7 +1090,7 @@ function HomePage() {
                           <NowPlayingEqualizer className="h-5 w-5" />
                         </span>
                       ) : (
-                        <span className="inline-flex h-12 w-12 translate-y-2 items-center justify-center rounded-full bg-emerald-500 text-black opacity-0 shadow-2xl shadow-black/60 transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100">
+                        <button type="button" onClick={(e) => handleCardPlayClick(e, card)} className="inline-flex h-12 w-12 translate-y-2 items-center justify-center rounded-full bg-emerald-500 text-black opacity-0 shadow-2xl shadow-black/60 transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100">
                           <svg
                             viewBox="0 0 24 24"
                             className="h-6 w-6 fill-current"
@@ -1082,7 +1098,7 @@ function HomePage() {
                           >
                             <path d="m7.05 3.606 13.49 7.788a.7.7 0 0 1 0 1.212L7.05 20.394A.7.7 0 0 1 6 19.788V4.212a.7.7 0 0 1 1.05-.606"></path>
                           </svg>
-                        </span>
+                        </button>
                       )}
                     </div>
                   </div>
@@ -1149,7 +1165,7 @@ function HomePage() {
                           <NowPlayingEqualizer className="h-5 w-5" />
                         </span>
                       ) : (
-                        <span className="inline-flex h-12 w-12 translate-y-2 items-center justify-center rounded-full bg-emerald-500 text-black opacity-0 shadow-2xl shadow-black/60 transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100">
+                        <button type="button" onClick={(e) => handleCardPlayClick(e, card)} className="inline-flex h-12 w-12 translate-y-2 items-center justify-center rounded-full bg-emerald-500 text-black opacity-0 shadow-2xl shadow-black/60 transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100">
                           <svg
                             viewBox="0 0 24 24"
                             className="h-6 w-6 fill-current"
@@ -1157,7 +1173,7 @@ function HomePage() {
                           >
                             <path d="m7.05 3.606 13.49 7.788a.7.7 0 0 1 0 1.212L7.05 20.394A.7.7 0 0 1 6 19.788V4.212a.7.7 0 0 1 1.05-.606"></path>
                           </svg>
-                        </span>
+                        </button>
                       )}
                     </div>
                   </div>
@@ -1227,7 +1243,7 @@ function HomePage() {
                           <NowPlayingEqualizer className="h-5 w-5" />
                         </span>
                       ) : (
-                        <span className="inline-flex h-12 w-12 translate-y-2 items-center justify-center rounded-full bg-emerald-500 text-black opacity-0 shadow-2xl shadow-black/60 transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100">
+                        <button type="button" onClick={(e) => handleCardPlayClick(e, card)} className="inline-flex h-12 w-12 translate-y-2 items-center justify-center rounded-full bg-emerald-500 text-black opacity-0 shadow-2xl shadow-black/60 transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100">
                           <svg
                             viewBox="0 0 24 24"
                             className="h-6 w-6 fill-current"
@@ -1235,7 +1251,7 @@ function HomePage() {
                           >
                             <path d="m7.05 3.606 13.49 7.788a.7.7 0 0 1 0 1.212L7.05 20.394A.7.7 0 0 1 6 19.788V4.212a.7.7 0 0 1 1.05-.606"></path>
                           </svg>
-                        </span>
+                        </button>
                       )}
                     </div>
                   </div>
@@ -1298,7 +1314,7 @@ function HomePage() {
                           <NowPlayingEqualizer className="h-5 w-5" />
                         </span>
                       ) : (
-                        <span className="inline-flex h-12 w-12 translate-y-2 items-center justify-center rounded-full bg-emerald-500 text-black opacity-0 shadow-2xl shadow-black/60 transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100">
+                        <button type="button" onClick={(e) => handleCardPlayClick(e, card)} className="inline-flex h-12 w-12 translate-y-2 items-center justify-center rounded-full bg-emerald-500 text-black opacity-0 shadow-2xl shadow-black/60 transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100">
                           <svg
                             viewBox="0 0 24 24"
                             className="h-6 w-6 fill-current"
@@ -1306,7 +1322,7 @@ function HomePage() {
                           >
                             <path d="m7.05 3.606 13.49 7.788a.7.7 0 0 1 0 1.212L7.05 20.394A.7.7 0 0 1 6 19.788V4.212a.7.7 0 0 1 1.05-.606"></path>
                           </svg>
-                        </span>
+                        </button>
                       )}
                     </div>
                   </div>
@@ -1384,7 +1400,7 @@ function HomePage() {
                           <NowPlayingEqualizer className="h-5 w-5" />
                         </span>
                       ) : (
-                        <span className="inline-flex h-12 w-12 translate-y-2 items-center justify-center rounded-full bg-emerald-500 text-black opacity-0 shadow-2xl shadow-black/60 transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100">
+                        <button type="button" onClick={(e) => handleCardPlayClick(e, card)} className="inline-flex h-12 w-12 translate-y-2 items-center justify-center rounded-full bg-emerald-500 text-black opacity-0 shadow-2xl shadow-black/60 transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100">
                           <svg
                             viewBox="0 0 24 24"
                             className="h-6 w-6 fill-current"
@@ -1392,7 +1408,7 @@ function HomePage() {
                           >
                             <path d="m7.05 3.606 13.49 7.788a.7.7 0 0 1 0 1.212L7.05 20.394A.7.7 0 0 1 6 19.788V4.212a.7.7 0 0 1 1.05-.606"></path>
                           </svg>
-                        </span>
+                        </button>
                       )}
                     </div>
                   </div>
@@ -1462,7 +1478,7 @@ function HomePage() {
                           <NowPlayingEqualizer className="h-5 w-5" />
                         </span>
                       ) : (
-                        <span className="inline-flex h-12 w-12 translate-y-2 items-center justify-center rounded-full bg-emerald-500 text-black opacity-0 shadow-2xl shadow-black/60 transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100">
+                        <button type="button" onClick={(e) => handleCardPlayClick(e, card)} className="inline-flex h-12 w-12 translate-y-2 items-center justify-center rounded-full bg-emerald-500 text-black opacity-0 shadow-2xl shadow-black/60 transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100">
                           <svg
                             viewBox="0 0 24 24"
                             className="h-6 w-6 fill-current"
@@ -1470,7 +1486,7 @@ function HomePage() {
                           >
                             <path d="m7.05 3.606 13.49 7.788a.7.7 0 0 1 0 1.212L7.05 20.394A.7.7 0 0 1 6 19.788V4.212a.7.7 0 0 1 1.05-.606"></path>
                           </svg>
-                        </span>
+                        </button>
                       )}
                     </div>
                   </div>
@@ -1533,7 +1549,7 @@ function HomePage() {
                           <NowPlayingEqualizer className="h-5 w-5" />
                         </span>
                       ) : (
-                        <span className="inline-flex h-12 w-12 translate-y-2 items-center justify-center rounded-full bg-emerald-500 text-black opacity-0 shadow-2xl shadow-black/60 transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100">
+                        <button type="button" onClick={(e) => handleCardPlayClick(e, card)} className="inline-flex h-12 w-12 translate-y-2 items-center justify-center rounded-full bg-emerald-500 text-black opacity-0 shadow-2xl shadow-black/60 transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100">
                           <svg
                             viewBox="0 0 24 24"
                             className="h-6 w-6 fill-current"
@@ -1541,7 +1557,7 @@ function HomePage() {
                           >
                             <path d="m7.05 3.606 13.49 7.788a.7.7 0 0 1 0 1.212L7.05 20.394A.7.7 0 0 1 6 19.788V4.212a.7.7 0 0 1 1.05-.606"></path>
                           </svg>
-                        </span>
+                        </button>
                       )}
                     </div>
                   </div>
@@ -1610,7 +1626,7 @@ function HomePage() {
                           <NowPlayingEqualizer className="h-5 w-5" />
                         </span>
                       ) : (
-                        <span className="inline-flex h-12 w-12 translate-y-2 items-center justify-center rounded-full bg-emerald-500 text-black opacity-0 shadow-2xl shadow-black/60 transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100">
+                        <button type="button" onClick={(e) => handleCardPlayClick(e, card)} className="inline-flex h-12 w-12 translate-y-2 items-center justify-center rounded-full bg-emerald-500 text-black opacity-0 shadow-2xl shadow-black/60 transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100">
                           <svg
                             viewBox="0 0 24 24"
                             className="h-6 w-6 fill-current"
@@ -1618,7 +1634,7 @@ function HomePage() {
                           >
                             <path d="m7.05 3.606 13.49 7.788a.7.7 0 0 1 0 1.212L7.05 20.394A.7.7 0 0 1 6 19.788V4.212a.7.7 0 0 1 1.05-.606"></path>
                           </svg>
-                        </span>
+                        </button>
                       )}
                     </div>
                   </div>
@@ -1681,7 +1697,7 @@ function HomePage() {
                           <NowPlayingEqualizer className="h-5 w-5" />
                         </span>
                       ) : (
-                        <span className="inline-flex h-12 w-12 translate-y-2 items-center justify-center rounded-full bg-emerald-500 text-black opacity-0 shadow-2xl shadow-black/60 transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100">
+                        <button type="button" onClick={(e) => handleCardPlayClick(e, card)} className="inline-flex h-12 w-12 translate-y-2 items-center justify-center rounded-full bg-emerald-500 text-black opacity-0 shadow-2xl shadow-black/60 transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100">
                           <svg
                             viewBox="0 0 24 24"
                             className="h-6 w-6 fill-current"
@@ -1689,7 +1705,7 @@ function HomePage() {
                           >
                             <path d="m7.05 3.606 13.49 7.788a.7.7 0 0 1 0 1.212L7.05 20.394A.7.7 0 0 1 6 19.788V4.212a.7.7 0 0 1 1.05-.606"></path>
                           </svg>
-                        </span>
+                        </button>
                       )}
                     </div>
                   </div>

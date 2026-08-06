@@ -14,6 +14,7 @@ import {
   clamp,
   getLibraryItemRoute,
   getRecentSearchItemRoute,
+  normalizeApiAssetUrl,
   readStoredWidth,
 } from '@/helpers/helper';
 import type { DragState, ResizeSide } from './types/app-layout.types';
@@ -32,6 +33,18 @@ const spotifyData: any = {
   podcasts: [],
 };
 import { GlobalToast } from '@/shared/components/GlobalToast';
+
+const toArray = (raw: any) => {
+  if (Array.isArray(raw)) return raw;
+  if (Array.isArray(raw?.content)) return raw.content;
+  if (Array.isArray(raw?.artists)) return raw.artists;
+  if (Array.isArray(raw?.albums)) return raw.albums;
+  if (Array.isArray(raw?.data)) return raw.data;
+  if (Array.isArray(raw?.data?.content)) return raw.data.content;
+  if (Array.isArray(raw?.data?.artists)) return raw.data.artists;
+  if (Array.isArray(raw?.data?.albums)) return raw.data.albums;
+  return [];
+};
 
 function AppLayout() {
   const { t } = useTranslation();
@@ -65,10 +78,32 @@ function AppLayout() {
   const currentTrack = usePlayerStore((state) => state.currentTrack);
   const [artists, setArtists] = useState<any[]>([]);
   const [albums, setAlbums] = useState<any[]>([]);
+  const [songs, setSongs] = useState<any[]>([]);
 
   useEffect(() => {
-    api.get('/artists').then((res: any) => setArtists(res.data || []));
-    api.get('/albums').then((res: any) => setAlbums(res.data || []));
+    api
+      .get('/artists')
+      .then((res: any) => setArtists(toArray(res.data)))
+      .catch((err: any) => {
+        console.error('Failed to fetch artists:', err?.response?.status, err?.response?.data ?? err);
+        setArtists([]);
+      });
+
+    api
+      .get('/albums')
+      .then((res: any) => setAlbums(toArray(res.data)))
+      .catch((err: any) => {
+        console.error('Failed to fetch albums:', err?.response?.status, err?.response?.data ?? err);
+        setAlbums([]);
+      });
+
+    api
+      .get('/songs')
+      .then((res: any) => setSongs(toArray(res.data)))
+      .catch((err: any) => {
+        console.error('Failed to fetch songs:', err?.response?.status, err?.response?.data ?? err);
+        setSongs([]);
+      });
   }, []);
 
   const hasInitializedPanel = useRef(false);
@@ -460,7 +495,7 @@ function AppLayout() {
       meta: t('common.words.artist'),
       type: 'artist' as const,
       palette: 'from-zinc-500 to-zinc-300',
-      image: artist.imageUrl || artist.picture || artist.images?.[0]?.url,
+      image: normalizeApiAssetUrl(artist.imageUrl || artist.picture || artist.images?.[0]?.url),
       route: `/artist/${artist.id}`,
     }));
 
@@ -470,18 +505,34 @@ function AppLayout() {
       meta: `${t('common.words.album')} . ${album.artistName}`,
       type: 'album' as const,
       palette: 'from-zinc-500 to-zinc-300',
-      image: album.coverImageUrl,
+      image: normalizeApiAssetUrl(album.coverImageUrl || album.imageUrl || album.picture || album.images?.[0]?.url),
       route: `/album/${album.id}`,
     }));
+
+    const songLibraryItems = songs.map((song) => {
+      const albumForSong = albums.find((a: any) => a.id === song.albumId || a.id === song.album_id);
+      const albumImage = albumForSong ? normalizeApiAssetUrl(albumForSong.coverImageUrl || albumForSong.images?.[0]?.url) : null;
+      const songImage = normalizeApiAssetUrl(song.coverImageUrl || song.imageUrl || song.images?.[0]?.url) || albumImage || undefined;
+
+      return {
+        id: song.id,
+        title: song.title || song.name,
+        meta: `${t('common.words.song')} . ${song.artistName || 'Song'}`,
+        type: 'song' as const,
+        palette: 'from-zinc-500 to-zinc-300',
+        image: songImage,
+        route: `/track/${song.id}`,
+      };
+    });
 
     // We can insert the custom items right after the Liked Songs (index 0) or at the end
     // Here we'll just put them right after Liked Songs
     const result = [];
     if (baseItems.length > 0) result.push(baseItems[0]);
-    result.push(...publicPlaylists, ...customItems, ...artistLibraryItems, ...albumLibraryItems);
+    result.push(...publicPlaylists, ...customItems, ...artistLibraryItems, ...albumLibraryItems, ...songLibraryItems);
     if (baseItems.length > 1) result.push(...baseItems.slice(1));
     return result;
-  }, [t, customPlaylists, likedSongs.length, artists, albums]);
+  }, [t, customPlaylists, likedSongs.length, artists, albums, songs]);
 
   const getResizerClass = (side: ResizeSide) =>
     `group relative hidden w-2 cursor-col-resize rounded-full lg:block ${

@@ -27,6 +27,24 @@ export const readStoredBoolean = (key: string, fallback: boolean) => {
   return storedValue === 'true';
 };
 
+export const normalizeApiAssetUrl = (url?: string | null) => {
+  if (!url) return undefined;
+
+  try {
+    const parsedUrl = new URL(url);
+    if (
+      (parsedUrl.hostname === 'localhost' || parsedUrl.hostname === '127.0.0.1') &&
+      parsedUrl.port === '9005'
+    ) {
+      return `${import.meta.env.VITE_API_ASSET_ORIGIN ?? 'http://192.168.1.190:9005'}${parsedUrl.pathname}`;
+    }
+  } catch {
+    return url;
+  }
+
+  return url;
+};
+
 export const getLibraryItemRoute = (item: LibraryItem) =>
   item.type === 'playlist'
     ? `/playlist/${item.id}`
